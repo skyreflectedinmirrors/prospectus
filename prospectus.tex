@@ -1,0 +1,106 @@
+\documentclass[a4paper,10pt]{article}
+\usepackage[utf8]{inputenc}
+
+\usepackage[resetlabels]{multibib}
+\usepackage[binary-units]{siunitx}
+\sisetup{group-separator={,},
+     detect-all,
+     binary-units,
+     list-units = single,
+     range-units = single,
+     range-phrase = --,
+     per-mode = symbol-or-fraction,
+     separate-uncertainty = true,
+     multi-part-units = single,
+     list-final-separator = {, and }
+%    scientific-notation = fixed
+}
+
+\newcites{sel}{Selected Bibliography}
+
+\def\avx/{\texttt{avx2}}
+\def\sse/{\texttt{sse4.2}}
+\def\gpuold/{\texttt{C2075}}
+\def\gpunew/{\texttt{K40m}}
+
+%opening
+\title{Accelerating reacting flow simulations via vectorized evaluation}
+\author{Nicholas Curtis}
+
+\begin{document}
+
+\maketitle
+
+\section{An investigation of GPU-based stiff chemical kinetics integration methods}
+\nocitesel{curtis2017investigation}
+A fifth-order implicit Runge--Kutta method and two fourth-order exponential integration methods equipped with Krylov subspace approximations were implemented for the GPU and paired with the analytical chemical kinetic Jacobian software \texttt{pyJac}.
+The performance of each algorithm was evaluated by integrating thermochemical state data sampled from stochastic partially stirred reactor simulations and compared with the commonly used CPU-based implicit integrator \texttt{CVODE}.
+We estimated that the implicit Runge--Kutta method running on a single Tesla C2075 GPU is equivalent to \texttt{CVODE} running on \numrange{12}{38} Intel Xeon E5-4640 v2 CPU cores for integration of a single global integration time step of \SI{e-6}{\second} with hydrogen and methane kinetic models.
+In the stiffest case studied---the methane model with a global integration time step of \SI{e-4}{\second}---thread divergence and higher memory traffic significantly decreased GPU performance to the equivalent of \texttt{CVODE} running on approximately three CPU cores.
+The exponential integration algorithms performed more slowly than the implicit integrators on both the CPU and GPU.
+Thread divergence and memory traffic were identified as the main limiters of GPU integrator performance, and techniques to mitigate these issues were discussed.
+Use of a finite-difference Jacobian on the GPU---in place of the analytical Jacobian provided by \texttt{pyJac}---greatly decreased integrator performance due to thread divergence, resulting in maximum slowdowns of \SIrange{7.11}{240.96}{$\times$}; in comparison, the corresponding slowdowns on the CPU were just \SIrange{1.39}{2.61}{$\times$}, underscoring the importance of use of an analytical Jacobian for efficient GPU integration.
+Finally, future research directions for working towards enabling realistic chemistry in reactive-flow simulations via GPU\slash SIMT accelerated stiff chemical kinetics integration were identified.
+
+\section{Using SIMD and SIMT vectorization to evaluate sparse chemical kinetic Jacobian matrices and thermochemical source terms}
+\nocitesel{2018arXiv180901029C}
+Accurately predicting key combustion phenomena in reactive-flow simulations, e.g., lean blow-out, extinction\slash ignition limits and pollutant formation, necessitates the use of detailed chemical kinetics.
+The large size and high levels of numerical stiffness typically present in chemical kinetic models relevant to transportation\slash power-generation applications make the efficient evaluation\slash factorization of the chemical kinetic Jacobian and thermochemical source-terms critical to the performance of reactive-flow codes.
+Here we investigate the performance of vectorized evaluation of constant-pressure/volume thermochemical source-term and sparse/dense chemical kinetic Jacobians using single-instruction, multiple-data (SIMD) and single-instruction, multiple thread (SIMT) paradigms. These are implemented in pyJac, an open-source, reproducible code generation platform.
+Selected chemical kinetic models covering the range of sizes typically used in reactive-flow simulations were used for demonstration.
+A new formulation of the chemical kinetic governing equations was derived and verified, resulting in Jacobian sparsities of \SIrange{28.6}{92.0}{$\percent$} for the tested models.
+Speedups of \SIrange{3.40}{4.08}{$\times$} were found for shallow-vectorized OpenCL source-rate evaluation compared with a parallel OpenMP code on an \avx/ central processing unit (CPU), increasing to \SIrange{6.63}{9.44}{$\times$} and \SIrange{3.03}{4.23}{$\times$} for sparse and dense chemical kinetic Jacobian evaluation, respectively.
+Furthermore, the effect of data-ordering was investigated and a storage pattern specifically formulated for vectorized evaluation was proposed; as well, the effect of the constant pressure\slash volume assumptions and varying vector widths were studied on source-term evaluation performance.
+Speedups reached up to \SI{17.60}{$\times$} and \SI{45.13}{$\times$} for dense and sparse evaluation on the GPU, and up to \SI{55.11}{$\times$} and \SI{245.63}{$\times$} on the CPU over a first-order finite-difference  Jacobian approach.
+Further, dense Jacobian evaluation was up to \SI{19.56}{$\times$} and \SI{2.84}{$\times$} times faster than a previous version of \texttt{pyJac} on a CPU and GPU, respectively.
+Finally, future directions for vectorized chemical kinetic evaluation and sparse linear-algebra techniques were discussed.
+
+\section{Accelerating large-eddy simulations with SIMD-vectorized chemical kinetic integration [in progress]}
+The Volvo bluff-body~\cite{sjunnesson1991validation,sjunnesson1991lda} premixed turbulent reacting flame was modeled in the OpenFOAM computational fluid dynamics library.
+A large eddy simulation was conducted with a \SI{2}{\milli\meter} hexagonal mesh (\SI{0.3}{\milli\meter} wall-normal distance), and validated against experimentally measured mean and fluctuating velocities profiles~\cite{sjunnesson1991validation,sjunnesson1991lda}.
+A reacting-flow methane case (utilizing GRI-Mech 3.0) was then run with the stock fourth-order linearly-implicit Rosenbrock integration algorithm present in OpenFOAM (which includes a semi-analytical chemical kinetic Jacobian) to obtain a performance benchmark.
+Finally, a vectorized CPU solver~\cite{STONE201818} will be paired with the new version~\cite{2018arXiv180901029C} of \texttt{pyJac}---our chemical kinetic code-generation platform---to produce a fully vectorized explicit-SIMD integration algorithm, completed with vectorized chemical kinetic source terms and analytical Jacobian.
+The performance of this solver will be compared to the standard OpenFOAM solvers to determine the effective speedup.
+
+
+
+%% The Appendices part starts with the command \appendix;
+%% appendix sections are then done as normal sections
+\appendix
+\setcounter{figure}{0}
+\setcounter{table}{0}
+
+% Fix for missing space between "Appendix" and letter
+\renewcommand*{\thesection}{\appendixname~\Alph{section}}
+
+\section{\texttt{pyJac}: analytical Jacobian generator for chemical kinetics}
+\nocitesel{Niemeyer:2016aa}
+Accurate simulations of combustion phenomena require the use of detailed chemical kinetics in order to capture limit phenomena such as ignition and extinction as well as predict pollutant formation.
+However, the chemical kinetic models for hydrocarbon fuels of practical interest typically have large numbers of species and reactions and exhibit high levels of mathematical stiffness in the governing differential equations, particularly for larger fuel molecules.
+In order to integrate the stiff equations governing chemical kinetics, generally reactive-flow simulations rely on implicit algorithms that require frequent Jacobian matrix evaluations.
+Some in situ and a posteriori computational diagnostics methods also require accurate Jacobian matrices, including computational singular perturbation and chemical explosive mode analysis.
+Typically, finite differences numerically approximate these, but for larger chemical kinetic models this poses significant computational demands since the number of chemical source term evaluations scales with the square of species count.
+Furthermore, existing analytical Jacobian tools do not optimize evaluations or support emerging SIMD processors such as GPUs.
+Here we introduce \texttt{pyJac}, a Python-based open-source program that generates analytical Jacobian matrices for use in chemical kinetics modeling and analysis.
+In addition to producing the necessary customized source code for evaluating reaction rates (including all modern reaction rate formulations), the chemical source terms, and the Jacobian matrix, \texttt{pyJac} uses an optimized evaluation order to minimize computational and memory operations.
+As a demonstration, we first establish the correctness of the Jacobian matrices for kinetic models of hydrogen, methane, ethylene, and isopentanol oxidation (number of species ranging \numrange{13}{360}) by showing agreement within \SI{0.001}{\percent} of matrices obtained via automatic differentiation.
+We then demonstrate the performance achievable on CPUs and GPUs using \texttt{pyJac} via matrix evaluation timing comparisons; the routines produced by \texttt{pyJac} outperformed first-order finite differences by \numrange{3}{7.5} times and the existing analytical Jacobian software \texttt{TChem} by \numrange{1.1}{2.2} times on a single-threaded basis.
+It is noted that \texttt{TChem} is not thread-safe, while \texttt{pyJac} is easily parallelized, and hence can greatly outperform \texttt{TChem} on multicore CPUs.
+The Jacobian matrix generator we describe here will be useful for reducing the cost of integrating chemical source terms with implicit algorithms in particular and algorithms that require an accurate Jacobian matrix in general.
+Furthermore, the open-source release of the program and Python-based implementation will enable wide adoption.
+
+\section{Determination of modeled luminosity-based and pressure-based ignition delay times of turbulent spray combustion}
+\nocitesel{SAMIMIABIANEH20161297}
+Turbulent spray combustion of n-dodecane was studied computationally in a constant volume combustion chamber, with a special emphasis on determining an analogous definition of experimental luminosity-based ignition delay time for computational fluid dynamics simulations.
+This modeling study was conducted over a range of initial combustion chamber temperatures varying from \SI{900}{\kelvin} to \SI{1200}{\kelvin} and gas density of $\SI{22.8}{\kg/\meter^3}$, using Large Eddy Simulation of turbulence, multizone combustion model, adaptive mesh refinement, and a skeletal n-dodecane chemical kinetic model.
+The spray and jet penetrations, combustion chamber pressure rise, fuel vapor mass fraction, and flame lift-off length were modeled and compared with the experimental data. Among all of the key species and spray characteristics studied, the modeled ignition delay times based on the n-dodecane vapor penetration, the hydroperoxyalkyl (QOOH) and hydroxyl (OH) mass history were shown to better match with the experimental results, and hence can be utilized in simulations to accurately determine the luminosity-based ignition delay times.
+
+
+\bibliographystylesel{unsrt}
+\bibliographysel{prospectus}
+
+\renewcommand{\refname}{References}
+\bibliographystyle{unsrt}
+\bibliography{prospectus}
+
+\end{document}
