@@ -6,7 +6,7 @@
   year={1991}
 }
 @article{curtis2017investigation,
-  title={An investigation of GPU-based stiff chemical kinetics integration methods},
+  title={An investigation of {GPU-based} stiff chemical kinetics integration methods},
   author={Curtis, Nicholas J and Niemeyer, Kyle E and Sung, Chih-Jen},
   journal={Combustion and Flame},
   volume={179},
@@ -14,18 +14,17 @@
   year={2017},
   publisher={Elsevier}
 }
-@ARTICLE{2018arXiv180901029C,
-   author = {{Curtis}, N.~J. and {Niemeyer}, K.~E. and {Sung}, C.-J.},
-    title = {Using {SIMD} and {SIMT} vectorization to evaluate sparse chemical kinetic {Jacobian} matrices and thermochemical source terms},
-  journal = {ArXiv e-prints},
-archivePrefix = {arXiv},
-   eprint = {1809.01029},
- primaryClass = {physics.comp-ph},
- keywords = {Physics - Computational Physics, Computer Science - Distributed, Parallel, and Cluster Computing, Physics - Chemical Physics},
-     year = 2018,
-    month = {Sep},
-   adsurl = {http://adsabs.harvard.edu/abs/2018arXiv180901029C},
-  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+@article{CURTIS2018186,
+title = {Using {SIMD} and {SIMT} vectorization to evaluate sparse chemical kinetic {Jacobian} matrices and thermochemical source terms},
+journal = {Combustion and Flame},
+volume = {198},
+pages = {186 - 204},
+year = {2018},
+issn = {0010-2180},
+doi = {https://doi.org/10.1016/j.combustflame.2018.09.008},
+url = {http://www.sciencedirect.com/science/article/pii/S0010218018303997},
+author = {Nicholas J. Curtis and Kyle E. Niemeyer and Chih-Jen Sung},
+keywords = {Chemical kinetics, SIMD, SIMT, Sparse, Jacobian}
 }
 
 @article{Niemeyer:2016aa,
@@ -61,7 +60,7 @@ keywords = {Turbulent spray combustion, n-Dodecane fuel, Hydroperoxyalkyl, Hydro
 }
 
 @article{STONE201818,
-title = {Accelerating finite-rate chemical kinetics with coprocessors: Comparing vectorization methods on GPUs, MICs, and CPUs},
+title = {Accelerating finite-rate chemical kinetics with coprocessors: Comparing vectorization methods on {GPUs}, {MICs}, and {CPUs}},
 journal = {Computer Physics Communications},
 volume = {226},
 pages = {18 - 29},
@@ -71,4 +70,82 @@ doi = {https://doi.org/10.1016/j.cpc.2018.01.015},
 url = {http://www.sciencedirect.com/science/article/pii/S0010465518300286},
 author = {Christopher P. Stone and Andrew T. Alferman and Kyle E. Niemeyer},
 keywords = {Chemical kinetics, Integration algorithms, Stiff ODEs, SIMD, GPU}
+}
+@article{LU2009192,
+title = {Toward accommodating realistic fuel chemistry in large-scale computations},
+journal = {Prog. Energy Combust. Sci.},
+volume = {35},
+number = {2},
+pages = {192 - 215},
+year = {2009},
+issn = {0360-1285},
+doi = {10.1016/j.pecs.2008.10.002},
+@url = {http://www.sciencedirect.com/science/article/pii/S036012850800066X},
+author = {Tianfeng Lu and Chung K. Law},
+keywords = {Fuel chemistry, Large scale simulations, Mechanism reduction, Stiffness removal, Diffusion reduction, Jacobian techniques}
+}
+
+@article{Huang20091814,
+title = {Study of dimethyl ether homogeneous charge compression ignition combustion process using a multi-dimensional computational fluid dynamics model },
+journal = {Int. J. Therm. Sci.},
+volume = {48},
+number = {9},
+pages = {1814 - 1822},
+year = {2009},
+note = "",
+issn = {1290-0729},
+doi = {10.1016/j.ijthermalsci.2009.02.006},
+@url = {http://www.sciencedirect.com/science/article/pii/S1290072909000167},
+author = {Chen Huang and Mingfa Yao and Xingcai Lu and Zhen Huang},
+keywords = {Homogeneous Charge Compression Ignition},
+keywords = {Dimethyl Ether},
+keywords = {Reduced Chemical Mechanism},
+keywords = {Multi-dimensional \{CFD\} Model},
+keywords = {Emissions },
+}
+
+@Article{Bottone2012,
+author={Bottone, Francesco and Kronenburg, Andreas and Gosman, David and Marquis, Andrew},
+title={The Numerical Simulation of Diesel Spray Combustion with {LES}-{CMC}},
+journal={Flow, Turbul. Combust.},
+year={2012},
+volume={89},
+number={4},
+pages={651--673},
+abstract={A Large Eddy Simulation (LES) approach together with the Conditional Moment Closure (CMC) method have been used for the simulation of spray combustion in engine-like conditions. The strategy consists of coupling an academic CMC code with the commercial CFD software Star-CD (CD-adapco). Two issues have been investigated: firstly, the applicability of conventional spray models to LES and secondly, LES-CMC for spray combustion. Conventional spray models that were originally developed for use in Reynolds-averaged equations have been assessed for their applicability within the LES framework by conducting non-reacting spray computations. Liquid core penetration, spray spreading angle and vapour phase penetration have been compared to the available experimental data and the agreement between LES and experiments is satisfactory. Several reacting spray calculations have been performed with a range of initial mixture and temperature conditions, which mimic Diesel engine configurations. The computed auto-ignition time and flame lift-off length are in good agreement with the experimental data. Despite the uncertainties associated with the spray models and the chemistry, the results illustrate that the LES-CMC methodology can reproduce well the experimental results.},
+issn={1573-1987},
+doi={10.1007/s10494-012-9415-y},
+@url={http://dx.doi.org/10.1007/s10494-012-9415-y},
+}
+
+@article{SCHWER2002270,
+title = {On upgrading the numerics in combustion chemistry codes},
+journal = {Combust. Flame},
+volume = {128},
+number = {3},
+pages = {270--291},
+year = {2002},
+issn = {0010-2180},
+doi = {10.1016/S0010-2180(01)00352-2},
+author = {Douglas A Schwer and John E Tolsma and William H Green and Paul I Barton}
+}
+
+
+@article{Moiz2016123,
+title = {Study of soot production for double injections of n-dodecane in {CI} engine-like conditions },
+journal = {Combust. Flame},
+volume = {173},
+number = "",
+pages = {123 - 131},
+year = {2016},
+note = "",
+issn = {0010-2180},
+doi = {10.1016/j.combustflame.2016.08.005},
+@url = {http://www.sciencedirect.com/science/article/pii/S0010218016302164},
+author = {Ahmed Abdul Moiz and Muhsin M Ameen and Seong-Young Lee and Sibendu Som},
+keywords = {Double injection},
+keywords = {Soot},
+keywords = {Ignition},
+keywords = {Lift-off},
+keywords = {Diesel spray }
 }
