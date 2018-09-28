@@ -23,6 +23,14 @@
 \usepackage{floatrow}
 \usepackage{graphicx}
 \usepackage{hyperref}
+\usepackage[nameinlink]{cleveref}
+\usepackage{xcolor}
+\hypersetup{
+    colorlinks,
+    linkcolor={blue!50!black},
+    citecolor={red!50!black},
+    urlcolor={blue!80!black}
+}
 
 \usepackage{todonotes}
 
@@ -43,23 +51,25 @@
 \maketitle
 
 \section*{Introduction}
-As the combustion and reactive-flows community has recognized the importance of detailed chemical kinetics for predictive reactive-flow simulations, chemical kinetic models have grown in size and complexity to describe current and next-generation fuels relevant to transportation and power generation.
-Several studies~\cite{Huang20091814,Bottone2012,Moiz2016123} have demonstrated that using even modestly sized chemical kinetic models can incur severe computation cost for realistic reactive-flow simulations.
-Moreover, the cost of evaluating the chemical source-terms scales linearly with the size of the model, while evaluating and factorizing the chemical kinetic Jacobian respectively scale quadratically and cubically with the number of species in the model, if naively implemented via a finite-difference method~\cite{LU2009192}.
+As the combustion community has recognized the importance of detailed chemical kinetics for predictive reactive-flow simulations, chemical kinetic models have grown in size and complexity to describe current and next-generation fuels relevant to transportation and power generation.
+Several studies~\cite{Huang20091814,Bottone2012,Moiz2016123} have demonstrated that the chemical kinetic integration of even modestly sized chemical kinetic models can incur severe computation overhead in realistic reactive-flow simulations.
 Many techniques to reduce the cost of utilizing detailed chemical models in reactive-flow simulations exist~\cite{LU2009192}; in particular, a carefully derived analytical formulation of the Jacobian matrix can greatly increase sparsity~\cite{SCHWER2002270} and drop the cost of Jacobian evaluation to linearly depend on the number of species in the model~\cite{LU2009192}.
-In addition, studies have shown that Single-Instruction, Multiple-Data (SIMD) and the related Single-Instruction, Multiple-Thread (SIMT) processors can accelerate chemical kinetic simulations, e.g.~\citeS{Niemeyer:2016aa,curtis2017investigation}\cite{STONE201818}.
+In addition, studies have shown~\citeS{Niemeyer:2016aa,curtis2017investigation}\cite{STONE201818} that Single-Instruction, Multiple-Data (SIMD) and the related Single-Instruction, Multiple-Thread (SIMT) processors can accelerate chemical kinetic simulations through vectorized evaluation.
 
-This work details my efforts.\todo{finish}
+This work details efforts to develop and validate open-source, vectorized algorithms to accelerate integration of stiff chemical kinetic ordinary differential equations (ODEs).
+This includes vectorized codes to evaluate the chemical kinetic source terms and a sparse, analytical Jacobian, as well as vectorized ODE integration algorithms for the CPU, GPU and other accelerators.
+The developed algorithms will be applied to a detailed large eddy simulation modeling a bluff-body stabilized turbulent reacting flame, in order to demonstrate accuracy and computational efficiency.
+
 
 \section{An investigation of GPU-based stiff chemical kinetics integration methods}
 \nociteS{curtis2017investigation}
 A fifth-order implicit Runge--Kutta method and two fourth-order exponential integration methods equipped with Krylov subspace approximations were implemented for the GPU and paired with the analytical chemical kinetic Jacobian software \texttt{pyJac}.
 The performance of each algorithm was evaluated by integrating thermochemical state data sampled from stochastic partially stirred reactor simulations and compared with the commonly used CPU-based implicit integrator \texttt{CVODE}.
-We estimated that the implicit Runge--Kutta method running on a single Tesla C2075 GPU is equivalent to \texttt{CVODE} running on \numrange{12}{38} Intel Xeon E5-4640 v2 CPU cores (Table \ref{T:gpu_perf}) for integration of a single global integration time step of \SI{e-6}{\second} with hydrogen and methane kinetic models.
+We estimated that the implicit Runge--Kutta method running on a single Tesla C2075 GPU is equivalent to \texttt{CVODE} running on \numrange{12}{38} Intel Xeon E5-4640 v2 CPU cores (\Cref{T:gpu_perf}) for integration of a single global integration time step of \SI{e-6}{\second} with hydrogen and methane kinetic models.
 In the stiffest case studied---the methane model with a global integration time step of \SI{e-4}{\second}---thread divergence and higher memory traffic significantly decreased GPU performance to the equivalent of \texttt{CVODE} running on approximately three CPU cores.
 The exponential integration algorithms performed more slowly than the implicit integrators on both the CPU and GPU.
 Thread divergence and memory traffic were identified as the main limiters of GPU integrator performance, and techniques to mitigate these issues were discussed.
-Use of a finite-difference Jacobian on the GPU---in place of the analytical Jacobian provided by \texttt{pyJac}---greatly decreased integrator performance (Fig.~\ref{F:fd_jac}) due to thread divergence, resulting in maximum slowdowns of \SIrange{7.11}{240.96}{$\times$}; in comparison, the corresponding slowdowns on the CPU were just \SIrange{1.39}{2.61}{$\times$}, underscoring the importance of use of an analytical Jacobian for efficient GPU integration.
+Use of a finite-difference Jacobian on the GPU---in place of the analytical Jacobian provided by \texttt{pyJac}---greatly decreased integrator performance (\Cref{F:fd_jac}) due to thread divergence, resulting in maximum slowdowns of \SIrange{7.11}{240.96}{$\times$}; in comparison, the corresponding slowdowns on the CPU were just \SIrange{1.39}{2.61}{$\times$}, underscoring the importance of use of an analytical Jacobian for efficient GPU integration.
 Finally, future research directions for working towards enabling realistic chemistry in reactive-flow simulations via GPU\slash SIMT accelerated stiff chemical kinetics integration were identified.
 
 \begin{figure}[htb!]
@@ -77,14 +87,15 @@ Finally, future research directions for working towards enabling realistic chemi
     \end{tabular}
     }{%
       \captionsetup{width=0.5\textwidth}
-      \caption{Equivalent \# of CPU cores required to match performance of implicit Runge--Kutta algorithm on a single GPU for various models and integration time-step sizes.}%
+      \caption{Equivalent number of CPU cores running \texttt{CVODES} required to match performance of implicit Runge--Kutta algorithm on a single GPU for various models and integration time-step sizes.}%
       \label{T:gpu_perf}
     }%
     \ffigbox[\FBwidth]{%
       \captionsetup{width=0.5\textwidth}
-      \includegraphics[width=0.5\textwidth]{CH4_1e-06_ajac_comp.pdf}
+      \includegraphics[width=0.5\textwidth]{H2_1e-04_ajac_comp.pdf}
     }{%
-      \caption{Ratio of the average finite-difference Jacobian based integrator runtime $\lvert\textbf{R}_{\text{FD}}\rvert$ to that of the analytical Jacobian runtime $\lvert\textbf{R}_{\text{AJ}}\rvert$ for the implicit Runge--Kutta (CPU\slash GPU) solvers.}
+      \caption{Ratio of the average finite-difference Jacobian based integrator runtime $\lvert\textbf{R}_{\text{FD}}\rvert$ to that of the analytical Jacobian runtime $\lvert\textbf{R}_{\text{AJ}}\rvert$
+	       for the implicit Runge--Kutta (CPU\slash GPU) solvers using the hydrogen model with a global integration step-size of $\Delta t = \SI{e-4}{\sec}$.}
       \label{F:fd_jac}
     }
   \end{floatrow}
@@ -97,7 +108,7 @@ The large size and high levels of numerical stiffness typically present in chemi
 Here we investigate the performance of vectorized evaluation of constant-pressure/volume thermochemical source-term and sparse/dense chemical kinetic Jacobians using single-instruction, multiple-data (SIMD) and single-instruction, multiple thread (SIMT) paradigms. These are implemented in pyJac, an open-source, reproducible code generation platform.
 Selected chemical kinetic models covering the range of sizes typically used in reactive-flow simulations were used for demonstration.
 A new formulation of the chemical kinetic governing equations was derived and verified, resulting in Jacobian sparsities of \SIrange{28.6}{92.0}{$\percent$} for the tested models.
-Speedups of \SIrange{3.40}{4.08}{$\times$} were found for shallow-vectorized OpenCL source-rate evaluation compared with a parallel OpenMP code (Fig.~\ref{F:source}) on an \avx/ central processing unit (CPU), increasing to \SIrange{6.63}{9.44}{$\times$} and \SIrange{3.03}{4.23}{$\times$} for sparse and dense chemical kinetic Jacobian evaluation (Fig.~\ref{F:jac}), respectively.
+Speedups of \SIrange{3.40}{4.08}{$\times$} were found for shallow-vectorized OpenCL source-rate evaluation compared with a parallel OpenMP code (\Cref{F:source}) on an \avx/ central processing unit (CPU), increasing to \SIrange{6.63}{9.44}{$\times$} and \SIrange{3.03}{4.23}{$\times$} for sparse and dense chemical kinetic Jacobian evaluation (\Cref{F:jac}), respectively.
 Furthermore, the effect of data-ordering was investigated and a storage pattern specifically formulated for vectorized evaluation was proposed; as well, the effect of the constant pressure\slash volume assumptions and varying vector widths were studied on source-term evaluation performance.
 Speedups reached up to \SI{17.60}{$\times$} and \SI{45.13}{$\times$} for dense and sparse evaluation on the GPU, and up to \SI{55.11}{$\times$} and \SI{245.63}{$\times$} on the CPU over a first-order finite-difference  Jacobian approach.
 Further, dense Jacobian evaluation was up to \SI{19.56}{$\times$} and \SI{2.84}{$\times$} times faster than a previous version of \texttt{pyJac} on a CPU and GPU, respectively.
@@ -123,8 +134,8 @@ Finally, future directions for vectorized chemical kinetic evaluation and sparse
 
 \section{Accelerating large-eddy simulations with SIMD-vectorized chemical kinetic integration [in progress]}
 The Volvo bluff-body~\cite{sjunnesson1991validation,sjunnesson1991lda} premixed turbulent reacting flame was modeled in the OpenFOAM computational fluid dynamics library.
-A large eddy simulation was conducted with a \SI{2}{\milli\meter} hexagonal mesh with a \SI{0.3}{\milli\meter} wall-normal distance (Fig.~\ref{F:mesh}), and validated against experimentally measured mean and fluctuating velocities profiles~\cite{sjunnesson1991validation,sjunnesson1991lda}.
-A reacting-flow methane case (utilizing GRI-Mech 3.0) was then run (Fig.~\ref{F:flame}) with the stock fourth-order linearly-implicit Rosenbrock integration algorithm present in OpenFOAM (which includes a semi-analytical chemical kinetic Jacobian) to obtain a performance benchmark.
+A large eddy simulation was conducted with a \SI{2}{\milli\meter} hexagonal mesh with a \SI{0.3}{\milli\meter} wall-normal distance (\Cref{F:mesh}), and validated against experimentally measured mean and fluctuating velocities profiles~\cite{sjunnesson1991validation,sjunnesson1991lda}.
+A reacting-flow methane case (utilizing GRI-Mech 3.0) was then run (\Cref{F:flame}) with the stock fourth-order linearly-implicit Rosenbrock integration algorithm present in OpenFOAM (which includes a semi-analytical chemical kinetic Jacobian) to obtain a performance benchmark.
 Finally, a vectorized CPU solver~\cite{STONE201818} will be paired with the new version~\citeS{CURTIS2018186} of \texttt{pyJac}---our chemical kinetic code-generation platform---to produce a fully vectorized explicit-SIMD integration algorithm, completed with vectorized chemical kinetic source terms and analytical Jacobian.
 The performance of this solver will be compared to the standard OpenFOAM solvers to determine the effective speedup.
 
