@@ -1,0 +1,161 @@
+\documentclass{beamer}
+\usepackage[citestyle=authoryear, style=authoryear, backend=biber, uniquename=init, giveninits=true]{biblatex}
+\usepackage{lmodern}
+\usepackage{amsmath}
+\usepackage{mathtools}
+\usepackage[version=3]{mhchem} % Formula subscripts using \ce{}, e.g., \ce{H2SO4}
+\usepackage{siunitx}
+\usepackage[utf8]{inputenc}
+% https://tex.stackexchange.com/a/155611/56227
+\usepackage{textcomp}
+% footnote per page https://tex.stackexchange.com/a/1088/56227
+\usepackage{perpage}
+\usepackage{hyperref}
+
+\usebackgroundtemplate{%
+  \rule{0pt}{\paperheight}%
+  \hspace*{\paperwidth}%
+  \makebox[0pt][r]{\includegraphics[width=35mm]{logo}}
+}%
+
+\graphicspath{{./Figures/}}
+
+% clear title and doi from citations
+% from https://tex.stackexchange.com/q/165481/56227
+\AtEveryCitekey{\clearfield{doi}\clearfield{title}}
+
+% use dash for range phrase by default, and one unit
+\sisetup{range-phrase=--, range-units = single}
+
+% turn off nav bar
+\beamertemplatenavigationsymbolsempty
+
+% footnote per page https://tex.stackexchange.com/a/1088/56227
+\MakePerPage{footnote}
+
+% symbols for footnotes
+\renewcommand{\thefootnote}{\fnsymbol{footnote}}
+
+%smaller footnotes, adapted from http://tex.stackexchange.com/a/146021
+\setbeamerfont{footnote}{size=\fontsize{7pt}{0pt}}
+
+% adjust footnote width
+\newlength{\tmpwidth}
+\setlength{\tmpwidth}{0.65\paperwidth}
+\addtobeamertemplate{footnote}{\hsize\tmpwidth}{}
+
+%footnote spacing avoids navigation / margins, adapted from http://tex.stackexchange.com/a/44231
+\addtobeamertemplate{footnote}{\vspace{-6pt}\advance\hsize-0.5cm}{\vspace{6pt}}
+\makeatletter
+% Alternative A: footnote rule
+\renewcommand*{\footnoterule}{\kern -3pt \hrule \@width 2in \kern 8.6pt}
+% Alternative B: no footnote rule
+% \renewcommand*{\footnoterule}{\kern 6pt}
+\makeatother
+
+%make frame for each section
+\AtBeginSection[]{
+  \begin{frame}
+  \vfill
+  \centering
+  \begin{beamercolorbox}[sep=8pt,center,shadow=true,rounded=true]{title}
+    \usebeamerfont{title}\insertsectionhead\par%
+  \end{beamercolorbox}
+  \vfill
+  \end{frame}
+}
+
+\newcounter{dummynote1}% Save footnote counter
+\newcounter{dummynote2}% Save footnote counter
+
+%auto incrementing titles from http://tex.stackexchange.com/a/231533
+\newcounter{expensive}
+\newcommand\ExpTitle{%
+  \frametitle{\refstepcounter{expensive}{Chemical kinetic integration is \textbf{expensive}~--}~\theexpensive}}
+\resetcounteronoverlays{expensive}
+
+\newcounter{rosen}
+\newcommand\RosenTitle{%
+  \frametitle{\refstepcounter{rosen}{Rosenbrock Methods~--}~\therosen}}
+\resetcounteronoverlays{rosen}
+
+\newcounter{wmeth}
+\newcommand\WTitle{%
+  \frametitle{\refstepcounter{wmeth}{W-Methods~--}~\thewmeth}}
+\resetcounteronoverlays{wmeth}
+
+\newcounter{twostep}
+\newcommand\TwoStepTitle{%
+  \frametitle{\refstepcounter{twostep}{Two-Step Rosenbrock-type Methods~--}~\thetwostep}}
+\resetcounteronoverlays{twostep}
+
+\newcounter{stiff}
+\newcommand\BalanceTitle{%
+  \frametitle{\refstepcounter{stiff}{Stiffness-based Load Balancing~--}~\thestiff}}
+\resetcounteronoverlays{stiff}
+
+\bibliography{presentation.bib}
+
+%opening
+\title{Accelerating chemical kinetic integration for reacting-flows on hybrid architectures: A Literature Review}
+\author{Nick Curtis}
+\institute{University of Connecticut}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\section{Introduction}
+
+\begin{frame}
+\frametitle{Realistic chemical modeling is \textbf{critical}}
+In order to meet increasingly stringent emissions and efficiency requirements, designers of combustion devices have turned to \textbf{new technologies} and \textbf{new fuels}
+\begin{itemize}
+ \item Novel combustion regimes such as low-temperature combustion are often controlled by chemical processes, rather than directly controllable physical processes as in current technology
+ \item Further, developed solutions must be flexible to accommodate a variety of next generation fuels
+\end{itemize}
+Computationally guided combustion design has played an important role in development of these new technologies, however use of realistic chemical modeling (required for predictive reacting-flow simulations) is prohibitively expensive for most practical systems. 
+\end{frame}
+
+\begin{frame}
+ \frametitle{Chemical kinetic integration is \textbf{expensive}}
+ Chemical kinetic models for fuels relevant to transportation and energy generation may consist of hundreds to thousands of chemical species, with potentially tens of thousands of reactions.
+ \begin{itemize}
+  \item e.g., for gasoline \footfullcite{Mehl:2011cn} and jet fuel\footfullcite{Naik2011434}
+ \end{itemize}
+ Further, chemical kinetic models are typically \textbf{stiff}---due to the presence of highly reactive radicals and associated short chemical timescales.
+ \begin{itemize}
+  \item Implicit integration techniques are commonly used to efficiently deal with stiffness, requiring repeated evaluation and factorization of the chemical kinetic Jacobian.
+  \item Naive implementations of these operations scale \textbf{quadratically} and \textbf{cubically} with the number of species in a model, respectively\footfullcite{Lu:2009gh}.
+ \end{itemize}
+\end{frame}
+
+%\begin{frame}
+% \ExpTitle
+% As a result, chemical kinetic integration may be the most computationally intensive portion of reacting flow simulations, e.g. consuming \SI{70}{\percent}~\footfullcite{kodavasal2016development} of the total solver time in each time-step.
+%\end{frame}
+
+
+\begin{frame}
+ \frametitle{Strategies for cost reduction}
+ A few of the major strategies to accelerate chemical kinetic integration:
+ \begin{itemize}
+  \item \textbf{Model reduction}, a host of techniques to reduce the size of the system being solved while maintaining accuracy (as compared to the full model)
+  \item \textbf{Improved integration techniques}, development of new integration algorithms specifically for chemical kinetics, e.g. hybrid implicit\slash explicit integrators, tabulation techniques, analytical Jacobian codes, and on-the-fly stiffness removal
+  \item \textbf{Solver vectorization}, to better utilize available hardware, e.g. via single-instruction, multiple-data\slash multiple-thread (SIMD\slash SIMT) execution on central processing units (CPUs) and other accelerators such as Intel's many integrated core architecture (MIC) or graphics processing units (GPUs).
+  \item \textbf{High performance computing techniques}, stiffness-based load balancing, scaling for high performance clusters
+ \end{itemize}
+ We will focus on SIMD \textbf{vectorization}, \textbf{improved integration} and \textbf{high performance computing} techniques.
+\end{frame}
+
+\begin{frame}
+ \frametitle{Operator splitting and vectorization}
+ Most reacting-flow codes utilize the operator-splitting techniques (e.g.~\footfullcite{Knio:1999}$^{,}$~\footfullcite{Ren:2008}), separating a large system of coupled partial differential equations (PDEs), such that different physical processes are solved independently.
+ \begin{itemize}
+  \item Independent initial value problem (IVP) of chemical kinetic ordinary differential equations (ODEs) at each computational location (e.g. cell) in the domain~$\rightarrow$~vectorization!
+ \end{itemize}
+
+\end{frame}
+
+\end{document}
