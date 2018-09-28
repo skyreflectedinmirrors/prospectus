@@ -54,7 +54,7 @@
 As the combustion community has recognized the importance of detailed chemical kinetics for predictive reactive-flow simulations, chemical kinetic models have grown in size and complexity to describe current and next-generation fuels relevant to transportation and power generation.
 Several studies~\cite{Huang20091814,Bottone2012,Moiz2016123} have demonstrated that the chemical kinetic integration of even modestly sized chemical kinetic models can incur severe computation overhead in realistic reactive-flow simulations.
 Many techniques to reduce the cost of utilizing detailed chemical models in reactive-flow simulations exist~\cite{LU2009192}; in particular, a carefully derived analytical formulation of the Jacobian matrix can greatly increase sparsity~\cite{SCHWER2002270} and drop the cost of Jacobian evaluation to linearly depend on the number of species in the model~\cite{LU2009192}.
-In addition, studies have shown~\citeS{Niemeyer:2016aa,curtis2017investigation}\cite{STONE201818} that Single-Instruction, Multiple-Data (SIMD) and the related Single-Instruction, Multiple-Thread (SIMT) processors can accelerate chemical kinetic simulations through vectorized evaluation.
+In addition, studies have shown~\citeS{curtis2017investigation,Niemeyer:2016aa}\cite{STONE201818} that Single-Instruction, Multiple-Data (SIMD) and the related Single-Instruction, Multiple-Thread (SIMT) processors can accelerate chemical kinetic simulations through vectorized evaluation.
 
 This work details efforts to develop and validate open-source, vectorized algorithms to accelerate integration of stiff chemical kinetic ordinary differential equations (ODEs).
 This includes vectorized codes to evaluate the chemical kinetic source terms and a sparse, analytical Jacobian, as well as vectorized ODE integration algorithms for the CPU, GPU and other accelerators.
@@ -133,10 +133,11 @@ Finally, future directions for vectorized chemical kinetic evaluation and sparse
 
 
 \section{Accelerating large-eddy simulations with SIMD-vectorized chemical kinetic integration [in progress]}
-The Volvo bluff-body~\cite{sjunnesson1991validation,sjunnesson1991lda} premixed turbulent reacting flame was modeled in the OpenFOAM computational fluid dynamics library.
-A large eddy simulation was conducted with a \SI{2}{\milli\meter} hexagonal mesh with a \SI{0.3}{\milli\meter} wall-normal distance (\Cref{F:mesh}), and validated against experimentally measured mean and fluctuating velocities profiles~\cite{sjunnesson1991validation,sjunnesson1991lda}.
-A reacting-flow methane case (utilizing GRI-Mech 3.0) was then run (\Cref{F:flame}) with the stock fourth-order linearly-implicit Rosenbrock integration algorithm present in OpenFOAM (which includes a semi-analytical chemical kinetic Jacobian) to obtain a performance benchmark.
-Finally, a vectorized CPU solver~\cite{STONE201818} will be paired with the new version~\citeS{CURTIS2018186} of \texttt{pyJac}---our chemical kinetic code-generation platform---to produce a fully vectorized explicit-SIMD integration algorithm, completed with vectorized chemical kinetic source terms and analytical Jacobian.
+The Volvo bluff-body premixed turbulent reacting flame~\cite{sjunnesson1991validation,sjunnesson1991lda} was modeled in the OpenFOAM computational fluid dynamics library.
+A large eddy simulation was conducted for a non-reacting case, with a \SI{2}{\milli\meter} hexagonal mesh and \SI{0.3}{\milli\meter} wall-normal distance (\Cref{F:mesh}).
+The non-reacting velocity profiles were validated against experimentally measured mean and fluctuating velocities~\cite{sjunnesson1991validation,sjunnesson1991lda}.
+A reacting-flow methane case (utilizing GRI-Mech 3.0) was then run (\Cref{F:flame}) with the built-in fourth-order linearly-implicit Rosenbrock integration algorithm present in OpenFOAM (which includes a semi-analytical chemical kinetic Jacobian) to obtain a performance benchmark.
+Finally, a vectorized CPU solver~\cite{STONE201818} will be paired with the new version of \texttt{pyJac}~\citeS{CURTIS2018186}---our chemical kinetic code-generation platform---to produce a fully vectorized explicit-SIMD integration algorithm, completed with vectorized chemical kinetic source terms and analytical Jacobian.
 The performance of this solver will be compared to the standard OpenFOAM solvers to determine the effective speedup.
 
 \begin{figure}[!htb]
