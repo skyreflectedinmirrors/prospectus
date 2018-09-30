@@ -132,7 +132,7 @@ Finally, future directions for vectorized chemical kinetic evaluation and sparse
 
 
 
-\section{Accelerating large-eddy simulations with SIMD-vectorized chemical kinetic integration [in progress]}
+\section{Accelerating large-eddy simulations with SIMD-vectorized chemical kinetic integration}
 The Volvo bluff-body premixed turbulent reacting flame~\cite{sjunnesson1991validation,sjunnesson1991lda} was modeled using the OpenFOAM computational fluid dynamics library.
 A large eddy simulation was conducted for a non-reacting case, with a \SI{2}{\milli\meter} hexagonal mesh and \SI{0.3}{\milli\meter} wall-normal distance (\Cref{F:mesh}), resulting in roughly \num{2.37e6} total cells.
 The non-reacting velocity profiles were validated against experimentally measured mean and fluctuating velocities~\cite{sjunnesson1991validation,sjunnesson1991lda}.
@@ -184,13 +184,6 @@ We then demonstrate the performance achievable on CPUs and GPUs using \texttt{py
 It is noted that \texttt{TChem} is not thread-safe, while \texttt{pyJac} is easily parallelized, and hence can greatly outperform \texttt{TChem} on multicore CPUs.
 The Jacobian matrix generator we describe here will be useful for reducing the cost of integrating chemical source terms with implicit algorithms in particular and algorithms that require an accurate Jacobian matrix in general.
 Furthermore, the open-source release of the program and Python-based implementation will enable wide adoption.
-
-\section{Determination of modeled luminosity-based and pressure-based ignition delay times of turbulent spray combustion}
-\nociteS{SAMIMIABIANEH20161297}
-Turbulent spray combustion of n-dodecane was studied computationally in a constant volume combustion chamber, with a special emphasis on determining an analogous definition of experimental luminosity-based ignition delay time for computational fluid dynamics simulations.
-This modeling study was conducted over a range of initial combustion chamber temperatures varying from \SI{900}{\kelvin} to \SI{1200}{\kelvin} and gas density of $\SI{22.8}{\kg/\meter^3}$, using Large Eddy Simulation of turbulence, multizone combustion model, adaptive mesh refinement, and a skeletal n-dodecane chemical kinetic model.
-The spray and jet penetrations, combustion chamber pressure rise, fuel vapor mass fraction, and flame lift-off length were modeled and compared with the experimental data. Among all of the key species and spray characteristics studied, the modeled ignition delay times based on the n-dodecane vapor penetration, the hydroperoxyalkyl (QOOH) and hydroxyl (OH) mass history were shown to better match with the experimental results, and hence can be utilized in simulations to accurately determine the luminosity-based ignition delay times.
-
 
 \bibliographystyleS{unsrt}
 \bibliographyS{prospectus}
