@@ -43,7 +43,7 @@
 \def\gpunew/{\texttt{K40m}}
 
 %opening
-\title{Accelerating reacting flow simulations via vectorized chemical kinetic integration}
+\title{Accelerating reacting flow simulations via vectorized chemical kinetic evaluation and integration}
 \author{Nicholas Curtis}
 
 \begin{document}
@@ -56,9 +56,9 @@ Several studies~\cite{Huang20091814,Bottone2012,Moiz2016123} have demonstrated t
 Many techniques to reduce the cost of utilizing detailed chemical models in reactive-flow simulations exist~\cite{LU2009192}; in particular, a carefully derived analytical formulation of the Jacobian matrix can greatly increase sparsity~\cite{SCHWER2002270} and drop the cost of Jacobian evaluation to linearly depend on the number of species in the model~\cite{LU2009192}.
 In addition, studies have shown~\citeS{curtis2017investigation,Niemeyer:2016aa}\cite{STONE201818} that Single-Instruction, Multiple-Data (SIMD) and the related Single-Instruction, Multiple-Thread (SIMT) processors can accelerate chemical kinetic simulations through vectorized evaluation.
 
-This work details efforts to develop and validate open-source, vectorized algorithms to accelerate integration of stiff chemical kinetic ordinary differential equations (ODEs).
-This includes vectorized codes to evaluate the chemical kinetic source terms and a sparse, analytical Jacobian, as well as vectorized ODE integration algorithms for the CPU, GPU and other accelerators.
-The developed algorithms will be applied to a detailed large eddy simulation modeling a bluff-body stabilized turbulent reacting flame, in order to demonstrate accuracy and computational efficiency.
+This work details efforts to develop and validate open-source algorithms to accelerate integration of stiff chemical kinetic ordinary differential equations (ODEs) via vectorized execution on SIMD and SIMT devices.
+This includes codes to evaluate the chemical kinetic source terms and a sparse, analytical Jacobian, as well as ODE integration algorithms for the CPU, GPU and other accelerators.
+The developed algorithms will be applied to a detailed large eddy simulation of a bluff-body stabilized turbulent reacting flame, in order to demonstrate accuracy and computational efficiency.
 
 
 \section{An investigation of GPU-based stiff chemical kinetics integration methods}
@@ -87,7 +87,7 @@ Finally, future research directions for working towards enabling realistic chemi
     \end{tabular}
     }{%
       \captionsetup{width=0.5\textwidth}
-      \caption{Equivalent number of CPU cores running \texttt{CVODES} required to match performance of implicit Runge--Kutta algorithm on a single GPU for various models and integration time-step sizes.}%
+      \caption{Approximate number of CPU cores running \texttt{CVODES} required to match performance of implicit Runge--Kutta algorithm on a single GPU for various models and integration time-step sizes.}%
       \label{T:gpu_perf}
     }%
     \ffigbox[\FBwidth]{%
@@ -133,12 +133,14 @@ Finally, future directions for vectorized chemical kinetic evaluation and sparse
 
 
 \section{Accelerating large-eddy simulations with SIMD-vectorized chemical kinetic integration [in progress]}
-The Volvo bluff-body premixed turbulent reacting flame~\cite{sjunnesson1991validation,sjunnesson1991lda} was modeled in the OpenFOAM computational fluid dynamics library.
-A large eddy simulation was conducted for a non-reacting case, with a \SI{2}{\milli\meter} hexagonal mesh and \SI{0.3}{\milli\meter} wall-normal distance (\Cref{F:mesh}).
+The Volvo bluff-body premixed turbulent reacting flame~\cite{sjunnesson1991validation,sjunnesson1991lda} was modeled using the OpenFOAM computational fluid dynamics library.
+A large eddy simulation was conducted for a non-reacting case, with a \SI{2}{\milli\meter} hexagonal mesh and \SI{0.3}{\milli\meter} wall-normal distance (\Cref{F:mesh}), resulting in roughly \num{2.37e6} total cells.
 The non-reacting velocity profiles were validated against experimentally measured mean and fluctuating velocities~\cite{sjunnesson1991validation,sjunnesson1991lda}.
-A reacting-flow methane case (utilizing GRI-Mech 3.0) was then run (\Cref{F:flame}) with the built-in fourth-order linearly-implicit Rosenbrock integration algorithm present in OpenFOAM (which includes a semi-analytical chemical kinetic Jacobian) to obtain a performance benchmark.
-Finally, a vectorized CPU solver~\cite{STONE201818} will be paired with the new version of \texttt{pyJac}~\citeS{CURTIS2018186}---our chemical kinetic code-generation platform---to produce a fully vectorized explicit-SIMD integration algorithm, completed with vectorized chemical kinetic source terms and analytical Jacobian.
-The performance of this solver will be compared to the standard OpenFOAM solvers to determine the effective speedup.
+A reacting stoichiometic methane case utilizing the GRI-Mech 3.0 model (\Cref{F:flame}) was then run on \num{96} cores of Intel\raisebox{1ex}{\scriptsize{\textregistered}} Xeon\raisebox{1ex}{\scriptsize{\textregistered}} E5-2690 v3 Processors (four nodes total) with the built-in fourth-order linearly-implicit Rosenbrock integration algorithm present in OpenFOAM (which includes a semi-analytical chemical kinetic Jacobian) to obtain a performance benchmark.
+Finally, an open-source, vectorized ODE integration algorithm for the CPU (currently under development)---consisting of a similar linearly-implicit method implemented in OpenCL~\cite{STONE201818}, chemical kinetic source terms, and analytical Jacobian~\citeS{CURTIS2018186}---will be applied to the problem.
+The developed algorithm will be compared to the built-in OpenFOAM solver to determine the accuracy, effective speedup and resulting impact on chemistry load-balancing.
+Future directions and improvements, including sparse linear-algebra and load-balancing algorithms suited for the vectorized solver will be detailed.
+
 
 \begin{figure}[!htb]
   \begin{subfigure}[t]{0.45\textwidth}
