@@ -12,12 +12,6 @@
 \usepackage{perpage}
 \usepackage{hyperref}
 
-\usebackgroundtemplate{%
-  \rule{0pt}{\paperheight}%
-  \hspace*{\paperwidth}%
-  \makebox[0pt][r]{\includegraphics[width=35mm]{logo}}
-}%
-
 \graphicspath{{./Figures/}}
 
 % clear title and doi from citations
@@ -37,21 +31,29 @@
 \renewcommand{\thefootnote}{\fnsymbol{footnote}}
 
 %smaller footnotes, adapted from http://tex.stackexchange.com/a/146021
-\setbeamerfont{footnote}{size=\fontsize{7pt}{0pt}}
+\setbeamerfont{footnote}{size=\fontsize{6pt}{0pt}}
+
+% numeric footnote symbols
+\def\thefootnote{\arabic{footnote}}
+
+% set themes
+\usetheme{Frankfurt}
+\usecolortheme{seahorse}
+\usefonttheme{serif}
 
 % adjust footnote width
-\newlength{\tmpwidth}
-\setlength{\tmpwidth}{0.65\paperwidth}
-\addtobeamertemplate{footnote}{\hsize\tmpwidth}{}
+%\newlength{\tmpwidth}
+%\setlength{\tmpwidth}{0.65\paperwidth}
+%\addtobeamertemplate{footnote}{\hsize\tmpwidth}{}
 
 %footnote spacing avoids navigation / margins, adapted from http://tex.stackexchange.com/a/44231
-\addtobeamertemplate{footnote}{\vspace{-6pt}\advance\hsize-0.5cm}{\vspace{6pt}}
-\makeatletter
+%\addtobeamertemplate{footnote}{\vspace{-6pt}\advance\hsize-0.5cm}{\vspace{6pt}}
+%\makeatletter
 % Alternative A: footnote rule
-\renewcommand*{\footnoterule}{\kern -3pt \hrule \@width 2in \kern 8.6pt}
+%\renewcommand*{\footnoterule}{\kern -3pt \hrule \@width 2in \kern 8.6pt}
 % Alternative B: no footnote rule
 % \renewcommand*{\footnoterule}{\kern 6pt}
-\makeatother
+%\makeatother
 
 %make frame for each section
 \AtBeginSection[]{
@@ -65,89 +67,91 @@
   \end{frame}
 }
 
-\newcounter{dummynote1}% Save footnote counter
-\newcounter{dummynote2}% Save footnote counter
-
 %auto incrementing titles from http://tex.stackexchange.com/a/231533
 \newcounter{expensive}
 \newcommand\ExpTitle{%
   \frametitle{\refstepcounter{expensive}{Chemical kinetic integration is \textbf{expensive}~--}~\theexpensive}}
 \resetcounteronoverlays{expensive}
 
-\newcounter{rosen}
-\newcommand\RosenTitle{%
-  \frametitle{\refstepcounter{rosen}{Rosenbrock Methods~--}~\therosen}}
-\resetcounteronoverlays{rosen}
+% define background template env
+\newenvironment{background}{%
+\usebackgroundtemplate{%
+\rule{0pt}{\paperheight}%
+\hspace*{\paperwidth}%
+\makebox[0pt][r]{\includegraphics[width=35mm]{logo}}%
+}}{}
 
-\newcounter{wmeth}
-\newcommand\WTitle{%
-  \frametitle{\refstepcounter{wmeth}{W-Methods~--}~\thewmeth}}
-\resetcounteronoverlays{wmeth}
-
-\newcounter{twostep}
-\newcommand\TwoStepTitle{%
-  \frametitle{\refstepcounter{twostep}{Two-Step Rosenbrock-type Methods~--}~\thetwostep}}
-\resetcounteronoverlays{twostep}
-
-\newcounter{stiff}
-\newcommand\BalanceTitle{%
-  \frametitle{\refstepcounter{stiff}{Stiffness-based Load Balancing~--}~\thestiff}}
-\resetcounteronoverlays{stiff}
+% space between paragraphs beamer
+% https://tex.stackexchange.com/a/22644/56227
+\def\parend/{\\~\\}
 
 \bibliography{presentation.bib}
 
 %opening
-\title{Accelerating chemical kinetic integration for reacting-flows on hybrid architectures: A Literature Review}
+\title{Accelerating reacting flow simulations via vectorized chemical kinetic integration}
 \author{Nick Curtis}
 \institute{University of Connecticut}
 \date{\today}
 
 \begin{document}
 
+\begin{background}
 \maketitle
+\end{background}
 
+\begin{background}
 \section{Introduction}
+\end{background}
 
 \begin{frame}
-\frametitle{Realistic chemical modeling is \textbf{critical}}
-In order to meet increasingly stringent emissions and efficiency requirements, designers of combustion devices have turned to \textbf{new technologies} and \textbf{new fuels}
+\frametitle{Improving combustion technology}
+The push to design new clean, efficient combustion technologies has driven both:
 \begin{itemize}
- \item Novel combustion regimes such as low-temperature combustion are often controlled by chemical processes, rather than directly controllable physical processes as in current technology
- \item Further, developed solutions must be flexible to accommodate a variety of next generation fuels
+ \item the development of combustion devices operating in new regimes such as low-temperature combustion as well as,
+ \item the creation of large detailed chemical kinetic models for a wide range of fuel classes from bioalcohols~\footfullcite{SARATHY2009852} to gasoline surrogates\footfullcite{SARATHY201867}.
 \end{itemize}
-Computationally guided combustion design has played an important role in development of these new technologies, however use of realistic chemical modeling (required for predictive reacting-flow simulations) is prohibitively expensive for most practical systems. 
+These next generation combustion devices are often controlled by chemical processes, rather than current methods which rely on directly physical processes.\parend/
+Fuel selection and composition are key parameters for the design of such technologies, and the use of realistic chemical modeling is critical in order to achieve predictive numerical simulations.
 \end{frame}
 
 \begin{frame}
- \frametitle{Chemical kinetic integration is \textbf{expensive}}
- Chemical kinetic models for fuels relevant to transportation and energy generation may consist of hundreds to thousands of chemical species, with potentially tens of thousands of reactions.
+ \frametitle{Challenges of reactive-flow simulations}
+ \textbf{Model size:} Chemical kinetic models for transportation and energy relevant fuels may consist of hundreds to thousands of chemical species, with potentially tens of thousands of reactions (e.g., gasoline \footfullcite{Mehl:2011cn} and jet fuel\footfullcite{Naik2011434})\parend/
+ \textbf{Range of scales:} A typical reactive-flow simulation encompasses a wide range of physical and temporal scales, e.g., the flow-through time of a combustion chamber is typically measured in milliseconds, while chemical timescales might reach picoseconds\footfullcite{Lu:2009gh} due to the presence of highly reactive radicals and associated short chemical timescales.\parend/
+\end{frame}
+
+\begin{frame}
+ \frametitle{Numerical stiffness}
+ The large range of time-scales present in these chemical kinetic models---known as numerical stiffness---has traditionally been handled by use of implicit integration techniques, which require repeated evaluation and factorization of the chemical kinetic Jacobian.
  \begin{itemize}
-  \item e.g., for gasoline \footfullcite{Mehl:2011cn} and jet fuel\footfullcite{Naik2011434}
- \end{itemize}
- Further, chemical kinetic models are typically \textbf{stiff}---due to the presence of highly reactive radicals and associated short chemical timescales.
- \begin{itemize}
-  \item Implicit integration techniques are commonly used to efficiently deal with stiffness, requiring repeated evaluation and factorization of the chemical kinetic Jacobian.
   \item Naive implementations of these operations scale \textbf{quadratically} and \textbf{cubically} with the number of species in a model, respectively\footfullcite{Lu:2009gh}.
  \end{itemize}
+ However, using even modestly sized chemical kinetic models with such a solver can incur severe computation cost (e.g.,~\footfullcite{Moiz2016123}) for realistic reactive-flow simulations.
 \end{frame}
-
-%\begin{frame}
-% \ExpTitle
-% As a result, chemical kinetic integration may be the most computationally intensive portion of reacting flow simulations, e.g. consuming \SI{70}{\percent}~\footfullcite{kodavasal2016development} of the total solver time in each time-step.
-%\end{frame}
 
 
 \begin{frame}
- \frametitle{Strategies for cost reduction}
- A few of the major strategies to accelerate chemical kinetic integration:
- \begin{itemize}
-  \item \textbf{Model reduction}, a host of techniques to reduce the size of the system being solved while maintaining accuracy (as compared to the full model)
-  \item \textbf{Improved integration techniques}, development of new integration algorithms specifically for chemical kinetics, e.g. hybrid implicit\slash explicit integrators, tabulation techniques, analytical Jacobian codes, and on-the-fly stiffness removal
-  \item \textbf{Solver vectorization}, to better utilize available hardware, e.g. via single-instruction, multiple-data\slash multiple-thread (SIMD\slash SIMT) execution on central processing units (CPUs) and other accelerators such as Intel's many integrated core architecture (MIC) or graphics processing units (GPUs).
-  \item \textbf{High performance computing techniques}, stiffness-based load balancing, scaling for high performance clusters
- \end{itemize}
- We will focus on SIMD \textbf{vectorization}, \textbf{improved integration} and \textbf{high performance computing} techniques.
+ \frametitle{Reducing the cost of chemical kinetics}
+  A host of techniques have been developed to reduce the cost of chemical kinetic calculations while maintaining fidelity~\footfullcite{turanyi2016analysis}, e.g.:
+  \begin{itemize}
+   \item removal of unimportant species and reactions,
+   \item lumping of species with similar thermochemical properties, and
+   \item time-scale methods that reduce numerical stiffness
+  \end{itemize}
+  Today we will focus on two such (complementary) techniques, analytical Jacobian evaluation and vectorized chemical kinetic integration.
 \end{frame}
+
+\begin{background}
+\section{Analytical jacobian evaluation}
+\end{background}
+
+\begin{frame}
+ \footfullcite{HANSEN2018257}
+\end{frame}
+
+
+\begin{background}
+ \section{Vectorized ODEi ntegration}
 
 \begin{frame}
  \frametitle{Operator splitting and vectorization}
@@ -155,7 +159,9 @@ Computationally guided combustion design has played an important role in develop
  \begin{itemize}
   \item Independent initial value problem (IVP) of chemical kinetic ordinary differential equations (ODEs) at each computational location (e.g. cell) in the domain~$\rightarrow$~vectorization!
  \end{itemize}
-
 \end{frame}
+
+\end{background}
+
 
 \end{document}
