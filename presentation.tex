@@ -1,16 +1,26 @@
 \documentclass{beamer}
 \usepackage[citestyle=authoryear, style=authoryear, backend=biber, uniquename=init, giveninits=true]{biblatex}
 \usepackage{lmodern}
-\usepackage{amsmath}
+\usepackage{amsmath,amssymb}
 \usepackage{mathtools}
 \usepackage[version=3]{mhchem} % Formula subscripts using \ce{}, e.g., \ce{H2SO4}
 \usepackage{siunitx}
 \usepackage[utf8]{inputenc}
+% https://tex.stackexchange.com/a/351011/56227
+\usepackage{threeparttable}
+\usepackage{caption}
+\captionsetup[figure]{labelformat=empty,justification=centering}
 % https://tex.stackexchange.com/a/155611/56227
 \usepackage{textcomp}
 % footnote per page https://tex.stackexchange.com/a/1088/56227
 \usepackage{perpage}
+% speaker notes
+\usepackage{pgfpages}
 \usepackage{hyperref}
+
+\setbeameroption{hide notes} % only slides
+% \setbeameroption{show only notes} % only notes
+% \setbeameroption{show notes on second screen=right} % both
 
 \graphicspath{{./Figures/}}
 
@@ -32,9 +42,11 @@
 
 %smaller footnotes, adapted from http://tex.stackexchange.com/a/146021
 \setbeamerfont{footnote}{size=\fontsize{6pt}{0pt}}
+\setbeamerfont{mpfootnote}{size=\fontsize{6pt}{0pt}}
 
 % numeric footnote symbols
 \def\thefootnote{\arabic{footnote}}
+\def\thempfootnote{\arabic{mpfootnote}}
 
 % set themes
 \usetheme{Frankfurt}
@@ -110,8 +122,10 @@ The push to design new clean, efficient combustion technologies has driven both:
  \item the development of combustion devices operating in new regimes such as low-temperature combustion as well as,
  \item the creation of large detailed chemical kinetic models for a wide range of fuel classes from bioalcohols~\footfullcite{SARATHY2009852} to gasoline surrogates\footfullcite{SARATHY201867}.
 \end{itemize}
-These next generation combustion devices are often controlled by chemical processes, rather than current methods which rely on directly physical processes.\parend/
-Fuel selection and composition are key parameters for the design of such technologies, and the use of realistic chemical modeling is critical in order to achieve predictive numerical simulations.
+These next generation combustion devices are often controlled by chemical processes, rather than current methods which rely on directly physical processes.
+\begin{itemize}
+ \item Fuel selection and composition are key parameters for the design of such technologies, and the use of realistic chemical modeling is critical in order to achieve predictive numerical simulations.
+\end{itemize}
 \end{frame}
 
 \begin{frame}
@@ -146,12 +160,86 @@ Fuel selection and composition are key parameters for the design of such technol
 \end{background}
 
 \begin{frame}
- \footfullcite{HANSEN2018257}
+\frametitle{Why use an analytical jacobian?}
+\begin{itemize}
+ \item Exact chemical kinetic Jacobian evaluation is required for accuracy in both computational diagnostic methods (e.g., CSP, or CEMA) as well as non Newton--Krylov based implicit integration techniques\footfullcite{HANSEN2018257} (e.g., a linearly-implicit Rosenbrock methods).
+ \item In addition, analytical Jacobian evaluation drops the cost of Jacobian evaluation from a quadratic dependence on the number of species to a linear dependence on the number of reactions in a chemical model\footfullcite{Lu:2009gh}.
+ \item Further, carefully chosen system of equations can greatly increase the sparsity of the Jacobian~\footfullcite{Schwer2002270}, allowing for fast, sparse linear-algebra and matrix factorization techniques to be used.
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+ \frametitle{\texttt{pyJac} - an analytical jacobian generator}
+ \begin{columns}[c]
+  \begin{column}{0.6\textwidth}
+  \begin{minipage}[c]{\columnwidth}
+    \texttt{pyJac}\footfullcite{Niemeyer:2016aa} is an open-source, validated, chemical kinetic source-rate and analytical Jacobian code-generation platform with thousands of downloads, and has been used in applications such as:
+    \begin{itemize}
+     \item LES studies of duel-fuel spray combustion (right),
+     \item validation\slash performance testing for a DNS code for heterogeneous processors~\footfullcite{HERNANDEZPEREZ201873},
+     \item derivation of non-ambiguous derivatives in selection of chemical kinetic state vector~\footfullcite{HANSEN2018257}
+    \end{itemize}
+    \vfill
+  \end{minipage}
+  \end{column}
+  \begin{column}{0.4\textwidth}
+    \begin{center}
+     \begin{figure}
+      \centering
+      \includegraphics[width=\columnwidth]{spray.png}
+      \caption{OpenFOAM LES ECN-Spray A simulation using \texttt{pyJac}}
+     \end{figure}
+    \end{center}
+  \end{column}
+ \end{columns}
+ \note[item]{The Spray-A simulation is from an upcoming manuscript from Aalto University}
+\end{frame}
+
+\begin{frame}
+ \frametitle{\texttt{pyJac-V2} - a \textit{better} analytical jacobian generator}
+ The initial version of \texttt{pyJac} was capable of vectorized-GPU and multithreaded-CPU operation, \textit{however}:
+ \begin{itemize}
+  \item no vectorized execution on the CPU (or other accelerators)
+  \item the selection of state variables in \texttt{pyJac-V1} meant that the resulting jacobian was almost completely dense
+ \end{itemize}
+ \textrightarrow Enter \texttt{pyJac-V2}
+\end{frame}
+
+\begin{frame}
+\frametitle{Increased jacobian sparsity}
+A change of variables lead to a significant increase in Jacobian sparsity (with options available to further increase sparsity at the expense of strict correctness):
+\begin{figure}
+\begin{measuredfigure}
+ \includegraphics[height=0.5\textheight]{ch4_sparsity_exact.png}
+ \caption{Representation of sparsity of GRI-Mech 3.0 chemical kinetic model, a black square indicates a non-zero jacobian entry.}
+ 
+\end{measuredfigure}
+\end{figure}
+\end{frame}
+
+\begin{frame}
+\frametitle{Vectorized evaluation on the CPU}
+\begin{columns}
+ \begin{column}{0.5\textwidth}
+  The new version of \texttt{pyJac} utilizes the OpenCL programming language to achieve vectorization on the CPU, GPU and other accelerators.
+  \begin{itemize}
+   \item achievable CPU-speedup depends on the \textit{vector-width} of the device in question ($\SI{4}{\times}$ here, up-to $\SI{8}{\times}$ on newest processors).
+  \end{itemize}
+  Vectorized CPU code was $\SIrange{3.03}{4.23}{\times}$ and $\SIrange{6.63}{9.44}{\times}$ faster than purely parallel code for dense and sparse jacobian evaluation, respectively.
+ \end{column}
+ \begin{column}{0.5\textwidth}
+  \begin{figure}
+  \includegraphics[width=\textwidth]{sparse_vs_dense_speedup.pdf}
+  \caption{Speedup achieved by CPU-vectorization of \texttt{pyJac-V2}'s sparse and dense jacobian for several chemical models.}
+  \end{figure}
+ \end{column}
+\end{columns}
 \end{frame}
 
 
 \begin{background}
  \section{Vectorized ODE integration}
+\end{background}
 
 \begin{frame}
  \frametitle{Operator splitting and vectorization}
@@ -161,7 +249,6 @@ Fuel selection and composition are key parameters for the design of such technol
  \end{itemize}
 \end{frame}
 
-\end{background}
 
 
 \end{document}
