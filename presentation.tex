@@ -6,21 +6,36 @@
 \usepackage[version=3]{mhchem} % Formula subscripts using \ce{}, e.g., \ce{H2SO4}
 \usepackage{siunitx}
 \usepackage[utf8]{inputenc}
-% https://tex.stackexchange.com/a/351011/56227
-\usepackage{threeparttable}
 \usepackage{caption}
 \captionsetup[figure]{labelformat=empty,justification=centering}
 % https://tex.stackexchange.com/a/155611/56227
 \usepackage{textcomp}
+\usepackage{todonotes}
 % footnote per page https://tex.stackexchange.com/a/1088/56227
 \usepackage{perpage}
 % speaker notes
 \usepackage{pgfpages}
 \usepackage{hyperref}
 
-\setbeameroption{hide notes} % only slides
+% siunitx setup
+\sisetup{group-separator={,},
+	detect-all,
+	binary-units,
+	list-units = single,
+	range-units = single,
+	range-phrase = --,
+	per-mode = symbol-or-fraction,
+	separate-uncertainty = true,
+	multi-part-units = single,
+	list-final-separator = {, and }
+	%    scientific-notation = fixed
+}
+
+\newcommand{\textapprox}{\raisebox{0.5ex}{\texttildelow}}
+
+% \setbeameroption{hide notes} % only slides
 % \setbeameroption{show only notes} % only notes
-% \setbeameroption{show notes on second screen=right} % both
+\setbeameroption{show notes on second screen=right} % both
 
 \graphicspath{{./Figures/}}
 
@@ -129,9 +144,9 @@ These next generation combustion devices are often controlled by chemical proces
 \end{frame}
 
 \begin{frame}
- \frametitle{Challenges of reactive-flow simulations}
+ \frametitle{Challenges of reacting-flow simulations}
  \textbf{Model size:} Chemical kinetic models for transportation and energy relevant fuels may consist of hundreds to thousands of chemical species, with potentially tens of thousands of reactions (e.g., gasoline \footfullcite{Mehl:2011cn} and jet fuel\footfullcite{Naik2011434})\parend/
- \textbf{Range of scales:} A typical reactive-flow simulation encompasses a wide range of physical and temporal scales, e.g., the flow-through time of a combustion chamber is typically on the order of seconds to milliseconds, while chemical timescales may be just picoseconds in duration\footfullcite{Lu:2009gh} due to the presence of highly reactive radicals and associated short chemical timescales.\parend/
+ \textbf{Range of scales:} A typical reacting-flow simulation encompasses a wide range of physical and temporal scales, e.g., the flow-through time of a combustion chamber is typically on the order of seconds to milliseconds, while chemical timescales may be just picoseconds in duration\footfullcite{Lu:2009gh} due to the presence of highly reactive radicals and associated short chemical timescales.\parend/
 \end{frame}
 
 \begin{frame}
@@ -140,7 +155,7 @@ These next generation combustion devices are often controlled by chemical proces
  \begin{itemize}
   \item Naive implementations of these operations scale \textbf{quadratically} and \textbf{cubically} with the number of species in a model, respectively\footfullcite{Lu:2009gh}.
  \end{itemize}
- However, using even modestly sized chemical kinetic models with such a solver can incur severe computation cost (e.g.,~\footfullcite{Moiz2016123}) for realistic reactive-flow simulations.
+ However, using even modestly sized chemical kinetic models with such a solver can incur severe computation cost (e.g.,~\footfullcite{Moiz2016123}) for realistic reacting-flow simulations.
 \end{frame}
 
 
@@ -202,18 +217,15 @@ These next generation combustion devices are often controlled by chemical proces
   \item no vectorized execution on the CPU (or other accelerators)
   \item the selection of state variables in \texttt{pyJac-V1} meant that the resulting jacobian was almost completely dense
  \end{itemize}
- \textrightarrow Enter \texttt{pyJac-V2}
+ \textrightarrow Enter \texttt{pyJac-V2}\footfullcite{CURTIS2018186}
 \end{frame}
 
 \begin{frame}
 \frametitle{Increased jacobian sparsity}
 A change of variables lead to a significant increase in Jacobian sparsity (with options available to further increase sparsity at the expense of strict correctness):
 \begin{figure}
-\begin{measuredfigure}
  \includegraphics[height=0.5\textheight]{ch4_sparsity_exact.png}
  \caption{Representation of sparsity of GRI-Mech 3.0 chemical kinetic model, a black square indicates a non-zero jacobian entry.}
- 
-\end{measuredfigure}
 \end{figure}
 \end{frame}
 
@@ -223,9 +235,9 @@ A change of variables lead to a significant increase in Jacobian sparsity (with 
  \begin{column}{0.5\textwidth}
   The new version of \texttt{pyJac} utilizes the OpenCL programming language to achieve vectorization on the CPU, GPU and other accelerators.
   \begin{itemize}
-   \item achievable CPU-speedup depends on the \textit{vector-width} of the device in question ($\SI{4}{\times}$ here, up-to $\SI{8}{\times}$ on newest processors).
+   \item achievable CPU-speedup depends on vector-width of the device (\SI{4}{$\times$} here, up-to \SI{8}{$\times$} on newest processors).
   \end{itemize}
-  Vectorized CPU code was $\SIrange{3.03}{4.23}{\times}$ and $\SIrange{6.63}{9.44}{\times}$ faster than purely parallel code for dense and sparse jacobian evaluation, respectively.
+  Vectorized CPU code was \SIrange{3.03}{4.23}{$\times$} and \SIrange{6.63}{9.44}{$\times$} faster than purely parallel code for dense and sparse jacobian evaluation, respectively.
  \end{column}
  \begin{column}{0.5\textwidth}
   \begin{figure}
@@ -243,12 +255,141 @@ A change of variables lead to a significant increase in Jacobian sparsity (with 
 
 \begin{frame}
  \frametitle{Operator splitting and vectorization}
- Most reacting-flow codes utilize the operator-splitting techniques (e.g.~\footfullcite{Knio:1999}$^{,}$~\footfullcite{Ren:2008}), separating a large system of coupled partial differential equations (PDEs), such that different physical processes are solved independently.
+ Many reacting-flow codes utilize operator-splitting techniques (e.g.,~\footfullcite{Knio:1999}$^{,}$~\footfullcite{Ren:2008}) to decouple a large system of partial differential equations, such that different physical processes may be solved independently.
  \begin{itemize}
-  \item Independent initial value problem (IVP) of chemical kinetic ordinary differential equations (ODEs) at each computational location (e.g. cell) in the domain~$\rightarrow$~vectorization!
+  \item This results in independent initial value problem (IVPs) of chemical kinetic ODEs at each computational cell in the simulation\textrightarrow~embarrassingly-parallel problem.
  \end{itemize}
 \end{frame}
 
+\begin{frame}
+ \frametitle{GPU-based chemical kinetic integration}
+ Previous works demonstrated the value of GPU-based chemical kinetic integration for non-stiff to moderately-stiff chemistry (e.g.\footfullcite{2014NiemeyerGPU}$^,$\footfullcite{Shi:2012aa}), but GPU-integration of highly-stiff chemistry remained difficult due to issues with thread-divergence\footfullcite{Stone:2013aa}:
+ \begin{itemize}
+  \item \textit{thread-divergence}: a critical performance concern on GPUs; occurs when different threads must execute different instructions (e.g., branches of an if\slash then statement).
+ \end{itemize}
+ Newton--Krylov based implicit integration methods tend to be more susceptible to thread-divergence concerns due to the presence of an iteration loop inside of each ODE integration time-step.
+\end{frame}
+
+\begin{frame}
+ \frametitle{Stiff GPU chemistry integration algorithms}
+ Several integration techniques were tested for suitability for GPU-based integration:
+ \begin{itemize}
+  \item Exponential Rosenbrock methods -- these linearly-implicit techniques do not require Newton iteration inside the integration step\footnote{Ideally, alleviating thread-divergence concerns}, but instead rely on Krylov subspace approximations to the matrix exponential.
+  \item Implicit Runge--Kutta method -- a Newton--Krylov method similar to traditionally used methods, but of \textit{fixed} rather than variable-order (as in CVODEs).
+  \begin{itemize}
+   \item[\textrightarrow] This both simplifies implementation and removes another source of thread-divergence (varying integration order between IVPs)
+  \end{itemize}
+ \end{itemize}
+\end{frame}
+
+\begin{frame}
+ \frametitle{Stiff GPU chemistry integration algorithms}
+ The developed open-source\footnote{\url{https://github.com/SLACKHA/accelerInt}} integration algorithms were paired with an analytical Jacobian~\footfullcite{Niemeyer:2016aa}, and tested on chemical models of varying size, and levels of numerical stiffness, finding:%
+ \vskip-1.5em
+ \begin{columns}[t]
+  \begin{column}{0.6\textwidth}
+    \begin{itemize}
+      \item Speedups for GPU-based implicit Runge--Kutta method, decreased with larger model sizes and global integration time-step size.\note[item]{i.e, with increasing stiffness}
+      \item High levels of thread-divergence in the exponential integrators.\note[item]{due to varying integrator step-size and Krylov subspace dimension}
+      \item Up to \SI{241}{$\times$} speedup on GPU for analytical jacobian versus a finite-difference approach.
+    \end{itemize}
+  \end{column}
+  \begin{column}{0.4\textwidth}
+   \begin{figure}
+    \includegraphics[width=\textwidth]{CH4_exprb43_div}
+    \caption{Thread-divergence in the exponential Rosenbrock algorithm for GRI-Mech 3.0.}
+   \end{figure}
+  \end{column}
+ \end{columns}
+ \note[item]{So we still have issues with thread-divergence in GPU-solvers\textrightarrow CPU}
+\end{frame}
+
+\begin{background}
+ \section{Vectorized reacting-flow simulations}
+\end{background}
+
+\begin{frame}
+ \frametitle{Volvo Bluff-body flame}
+ To demonstration computational efficiency and accuracy of the algorithms and codes developed thus far, they are applied to a bluff-body stabilized, turbulent reacting-flame, large eddy simulation in the OpenFOAM CFD code.
+ \vskip-1.5em
+ \begin{columns}[t]
+  \begin{column}{0.6\textwidth}
+   \begin{itemize}
+    \item Selected case is a relatively simple configuration, well characterized with experimental velocity and temperature measurements available\footnotemark[1]
+    \item $U_{\text{in}} = $ \SI{16.6}{\meter/\s}, air at \SI{1}{\bar}, \SI{288}{\kelvin}
+    \item \num{2.37e6} mesh nodes (see right), based on recommendations from previous studies\footnotemark[2]$^\text{,}$\footnotemark[3]
+   \end{itemize}
+  \end{column}
+  \begin{column}{0.4\textwidth}
+  \begin{figure}
+   \includegraphics[width=\textwidth]{mesh.png}
+   \caption{\SI{2}{\milli\meter} hexagonal mesh, \SI{0.3}{\milli\meter} wall normal distance and clustering near walls; isotropic elsewhere.}
+  \end{figure}
+  \end{column}
+ \end{columns}
+ \footnotetext[1]{\fullcite{sjunnesson1991lda}}
+ \footnotetext[2]{\fullcite{MVPWorkshop}}
+ \footnotetext[3]{\fullcite{COCKS20153394}}
+\end{frame}
+
+\begin{frame}
+ \frametitle{Non-reacting case}
+ Non-reacting simulation velocity profiles validated against experimental results:
+ \vskip-2em
+ \begin{columns}[t]
+  \begin{column}{0.6\textwidth}
+   \begin{figure}
+    \includegraphics[width=\textwidth]{mean_axial_velocity}
+    \caption{Mean-axial velocity comparison.}
+   \end{figure}
+  \end{column}
+  \begin{column}{0.6\textwidth}
+  \begin{figure}
+   \includegraphics[width=\textwidth]{z_prime_rms_0p375}
+   \caption{Axial fluctuation velocity at \num{0.375}D (height of bluff-body) downstream.}
+  \end{figure}
+  \end{column}
+ \end{columns}
+\end{frame}
+
+\begin{frame}
+ \frametitle{Reacting case}
+ In order to obtain a baseline OpenFOAM reacting-flow solution:
+ \vskip-1.5em
+ \begin{columns}[t]
+  \begin{column}{0.6\textwidth}
+    \begin{itemize}
+      \item Stoichometric methane inflow; ignition kernel positioned behind the bluff body used during flame-development).
+      \item Flame ignited using 2-step BFER methane model\note[item]{\fullcite{FRANZELLI2012621}}, switched to GRI-Mech 3.0 once developed.
+      \item Fourth-order linearly-implicit Rosenbrock ODE solver\note[item]{faster than either Seulex or Rodas43}, with semi-analytical Jacobian\footnotemark[1]
+    \end{itemize}
+  \end{column}
+  \begin{column}{0.4\textwidth}
+   \begin{figure}
+    \centering
+    \includegraphics[width=\textwidth]{flame.png}
+    \caption{Developed bluff-body stabilized stoichometric methane flame}
+   \end{figure}
+  \end{column}
+ \end{columns}
+ \footnotetext[1]{Both are built-in to OpenFOAM}
+ Each time-step with the OpenFOAM solvers takes \textapprox\SI{3.5}{\hour}\footnote[2]{In large part due to poor chemistry load-balancing} on 92-cores (4-nodes) of UConn HPC.\note[item]{Intel\raisebox{1ex}{\scriptsize{\textregistered}} Xeon\raisebox{1ex}{\scriptsize{\textregistered}} E5-2690 v3 Processor}
+\end{frame}
+
+\begin{frame}
+ \frametitle{Vectorized solvers}
+ As a test of the developed algorithms, we will pair our CPU-vectorized analytical chemical kinetic source term and Jacobian code\footfullcite{CURTIS2018186}, with a previously developed vectorized linearly-implicit Rosenbrock method\footfullcite{STONE201818}, in order to determine:
+ \begin{itemize}
+  \item Accuracy
+  \item Effective speedup
+  \item Impact on chemical kinetic integration load-balancing (currently very poor in OpenFOAM!)
+ \end{itemize}
+\end{frame}
+
+\begin{frame}
+ \frametitle{Thank you!}
+ Questions?
+\end{frame}
 
 
 \end{document}
