@@ -190,7 +190,7 @@ These next generation combustion devices are often controlled by chemical proces
     \begin{itemize}
      \item LES studies of duel-fuel spray combustion (right),
      \item validation\slash performance testing for a DNS code for heterogeneous processors~\footfullcite{HERNANDEZPEREZ201873},
-     \item discussion of selection of chemical kinetic state variables~\footfullcite{HANSEN2018257}
+     \item discussion of proper selection of chemical kinetic state variables~\footfullcite{HANSEN2018257}
     \end{itemize}
     \vfill
   \end{minipage}
@@ -283,14 +283,14 @@ A change of variables lead to a significant increase in Jacobian sparsity (with 
 
 \begin{frame}
  \frametitle{Stiff GPU chemistry integration algorithms}
- The developed open-source\footnote{\url{https://github.com/SLACKHA/accelerInt}} integration algorithms were paired with an analytical Jacobian~\footfullcite{Niemeyer:2016aa}, and tested on chemical models of varying size, and levels of numerical stiffness, finding:%
+ The developed open-source integration algorithms~\footfullcite{curtis2017investigation} were paired with an analytical Jacobian~\footfullcite{Niemeyer:2016aa}, and tested on chemical models of varying size, and levels of numerical stiffness, finding:%
  \vskip-1.5em
  \begin{columns}[t]
   \begin{column}{0.6\textwidth}
     \begin{itemize}
-      \item Speedups for GPU-based implicit Runge--Kutta method, decreased with larger model sizes and global integration time-step size.\note[item]{i.e, with increasing stiffness}
+      \item Speedups for GPU-based implicit Runge--Kutta method, decreased with larger model sizes and global integration time-step size.\note[item]{i.e, with increasing stiffness, 12--38 cores for smaller timestep, 3--15 for larger}
       \item High levels of thread-divergence in the exponential integrators.\note[item]{due to varying integrator step-size and Krylov subspace dimension}
-      \item Up to \SI{241}{$\times$} speedup on GPU for analytical jacobian versus a finite-difference approach.
+      \item \SIrange{7}{241}{$\times$} speedup on GPU for analytical jacobian versus a finite-difference approach.\note[item]{\SIrange{1.39}{2.69}{$\times$} on CPU}
     \end{itemize}
   \end{column}
   \begin{column}{0.4\textwidth}
@@ -359,7 +359,7 @@ A change of variables lead to a significant increase in Jacobian sparsity (with 
  \begin{columns}[t]
   \begin{column}{0.6\textwidth}
     \begin{itemize}
-      \item Stoichometric methane inflow; ignition kernel positioned behind the bluff body used during flame-development).
+      \item Stoichometric methane inflow; ignition kernel positioned behind the bluff body used during flame-development.
       \item Flame ignited using 2-step BFER methane model\note[item]{\fullcite{FRANZELLI2012621}}, switched to GRI-Mech 3.0 once developed.
       \item Fourth-order linearly-implicit Rosenbrock ODE solver\note[item]{faster than either Seulex or Rodas43}, with semi-analytical Jacobian\footnotemark[1]
     \end{itemize}
