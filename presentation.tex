@@ -137,14 +137,14 @@ The push to design new clean, efficient combustion technologies has driven both:
  \item the development of combustion devices operating in new regimes such as low-temperature combustion as well as,
  \item the creation of large detailed chemical kinetic models for a wide range of fuel classes from bioalcohols~\footfullcite{SARATHY2009852} to gasoline surrogates\footfullcite{SARATHY201867}.
 \end{itemize}
-These next generation combustion devices are often controlled by chemical processes, rather than current methods which rely on directly physical processes.
+These next generation combustion devices are often controlled by chemical processes, rather than current methods which rely on direct physical processes.
 \begin{itemize}
- \item Fuel selection and composition are key parameters for the design of such technologies, and the use of realistic chemical modeling is critical in order to achieve predictive numerical simulations.
+ \item reacting-flow simulations can aid in the design process, however the use of \textbf{realistic chemical modeling is critical to obtain predictive results}.
 \end{itemize}
 \end{frame}
 
 \begin{frame}
- \frametitle{Challenges of reacting-flow simulations}
+ \frametitle{Challenges using realistic chemistry in reacting-flow simulations}
  \textbf{Model size:} Chemical kinetic models for transportation and energy relevant fuels may consist of hundreds to thousands of chemical species, with potentially tens of thousands of reactions (e.g., gasoline \footfullcite{Mehl:2011cn} and jet fuel\footfullcite{Naik2011434})\parend/
  \textbf{Range of scales:} A typical reacting-flow simulation encompasses a wide range of physical and temporal scales, e.g., the flow-through time of a combustion chamber is typically on the order of seconds to milliseconds, while chemical timescales may be just picoseconds in duration\footfullcite{Lu:2009gh} due to the presence of highly reactive radicals and associated short chemical timescales.\parend/
 \end{frame}
@@ -155,7 +155,7 @@ These next generation combustion devices are often controlled by chemical proces
  \begin{itemize}
   \item Naive implementations of these operations scale \textbf{quadratically} and \textbf{cubically} with the number of species in a model, respectively\footfullcite{Lu:2009gh}.
  \end{itemize}
- However, using even modestly sized chemical kinetic models with such a solver can incur severe computation cost (e.g.,~\footfullcite{Moiz2016123}) for realistic reacting-flow simulations.
+ Using even modestly sized chemical kinetic models with such a solver can incur severe computation cost (e.g.,~\footfullcite{Moiz2016123}) for realistic reacting-flow simulations.
 \end{frame}
 
 
@@ -176,11 +176,9 @@ These next generation combustion devices are often controlled by chemical proces
 
 \begin{frame}
 \frametitle{Why use an analytical jacobian?}
-\begin{itemize}
- \item Exact chemical kinetic Jacobian evaluation is required for accuracy in both computational diagnostic methods (e.g., CSP, or CEMA) as well as non Newton--Krylov based implicit integration techniques\footfullcite{HANSEN2018257} (e.g., a linearly-implicit Rosenbrock methods).
- \item In addition, analytical Jacobian evaluation drops the cost of Jacobian evaluation from a quadratic dependence on the number of species to a linear dependence on the number of reactions in a chemical model\footfullcite{Lu:2009gh}.
- \item Further, carefully chosen system of equations can greatly increase the sparsity of the Jacobian~\footfullcite{Schwer2002270}, allowing for fast, sparse linear-algebra and matrix factorization techniques to be used.
-\end{itemize}
+\textbf{Accuracy:} the exact chemical kinetic Jacobian evaluation is required for some computational diagnostic methods (e.g., CSP, or CEMA) in addition to non Newton--Krylov based implicit integration techniques\footfullcite{HANSEN2018257} (e.g., a linearly-implicit Rosenbrock methods).\parend/
+\textbf{Efficiency:} analytical jacobian evaluation drops the cost from a quadratic dependence on the number of species (for a finite-difference approach) to a linear dependence on the number of reactions in a chemical model\footfullcite{Lu:2009gh}.\parend/
+\textbf{Sparsity:} a carefully chosen system of equations can greatly increase the sparsity of the Jacobian~\footfullcite{Schwer2002270}, allowing for fast, sparse linear-algebra and matrix factorization techniques to be used.
 \end{frame}
 
 \begin{frame}
@@ -192,7 +190,7 @@ These next generation combustion devices are often controlled by chemical proces
     \begin{itemize}
      \item LES studies of duel-fuel spray combustion (right),
      \item validation\slash performance testing for a DNS code for heterogeneous processors~\footfullcite{HERNANDEZPEREZ201873},
-     \item derivation of non-ambiguous derivatives in selection of chemical kinetic state vector~\footfullcite{HANSEN2018257}
+     \item discussion of selection of chemical kinetic state variables~\footfullcite{HANSEN2018257}
     \end{itemize}
     \vfill
   \end{minipage}
@@ -217,12 +215,13 @@ These next generation combustion devices are often controlled by chemical proces
   \item no vectorized execution on the CPU (or other accelerators)
   \item the selection of state variables in \texttt{pyJac-V1} meant that the resulting jacobian was almost completely dense
  \end{itemize}
- \textrightarrow Enter \texttt{pyJac-V2}\footfullcite{CURTIS2018186}
+ \textrightarrow Enter\footfullcite{CURTIS2018186} \texttt{pyJac-V2}
 \end{frame}
 
 \begin{frame}
 \frametitle{Increased jacobian sparsity}
 A change of variables lead to a significant increase in Jacobian sparsity (with options available to further increase sparsity at the expense of strict correctness):
+\note[item]{the dense lines across the jacobian are due to the presence of the last species in reactions or as a third-body species}
 \begin{figure}
  \includegraphics[height=0.5\textheight]{ch4_sparsity_exact.png}
  \caption{Representation of sparsity of GRI-Mech 3.0 chemical kinetic model, a black square indicates a non-zero jacobian entry.}
@@ -235,9 +234,9 @@ A change of variables lead to a significant increase in Jacobian sparsity (with 
  \begin{column}{0.5\textwidth}
   The new version of \texttt{pyJac} utilizes the OpenCL programming language to achieve vectorization on the CPU, GPU and other accelerators.
   \begin{itemize}
-   \item achievable CPU-speedup depends on vector-width of the device (\SI{4}{$\times$} here, up-to \SI{8}{$\times$} on newest processors).
+   \item achievable CPU-speedup depends on vector-width of the device (\SI{4}{$\times$} here\note[item]{up-to \SI{8}{$\times$} on newest processors}).
   \end{itemize}
-  Vectorized CPU code was \SIrange{3.03}{4.23}{$\times$} and \SIrange{6.63}{9.44}{$\times$} faster than purely parallel code for dense and sparse jacobian evaluation, respectively.
+  The vectorized CPU code was \SIrange{3.03}{4.23}{$\times$} and \SIrange{6.63}{9.44}{$\times$} faster than purely parallel code (on the same processor) for dense and sparse jacobian evaluation, respectively.
  \end{column}
  \begin{column}{0.5\textwidth}
   \begin{figure}
@@ -263,7 +262,7 @@ A change of variables lead to a significant increase in Jacobian sparsity (with 
 
 \begin{frame}
  \frametitle{GPU-based chemical kinetic integration}
- Previous works demonstrated the value of GPU-based chemical kinetic integration for non-stiff to moderately-stiff chemistry (e.g.\footfullcite{2014NiemeyerGPU}$^,$\footfullcite{Shi:2012aa}), but GPU-integration of highly-stiff chemistry remained difficult due to issues with thread-divergence\footfullcite{Stone:2013aa}:
+ Previous works demonstrated the value of GPU-based chemical kinetic integration for non-stiff to moderately-stiff chemistry (e.g.\footfullcite{2014NiemeyerGPU}$^,$\footfullcite{Shi:2012aa}), but efficient GPU-integration of highly-stiff chemistry remained difficult due to issues with thread-divergence\footfullcite{Stone:2013aa}:
  \begin{itemize}
   \item \textit{thread-divergence}: a critical performance concern on GPUs; occurs when different threads must execute different instructions (e.g., branches of an if\slash then statement).
  \end{itemize}
@@ -272,7 +271,7 @@ A change of variables lead to a significant increase in Jacobian sparsity (with 
 
 \begin{frame}
  \frametitle{Stiff GPU chemistry integration algorithms}
- Several integration techniques were tested for suitability for GPU-based integration:
+ Several integration algorithms were tested to determine suitability for GPU-based integration:
  \begin{itemize}
   \item Exponential Rosenbrock methods -- these linearly-implicit techniques do not require Newton iteration inside the integration step\footnote{Ideally, alleviating thread-divergence concerns}, but instead rely on Krylov subspace approximations to the matrix exponential.
   \item Implicit Runge--Kutta method -- a Newton--Krylov method similar to traditionally used methods, but of \textit{fixed} rather than variable-order (as in CVODEs).
@@ -309,20 +308,21 @@ A change of variables lead to a significant increase in Jacobian sparsity (with 
 \end{background}
 
 \begin{frame}
- \frametitle{Volvo Bluff-body flame}
- To demonstration computational efficiency and accuracy of the algorithms and codes developed thus far, they are applied to a bluff-body stabilized, turbulent reacting-flame, large eddy simulation in the OpenFOAM CFD code.
- \vskip-1.5em
+ \frametitle{Volvo bluff-body flame}
+ To demonstration computational efficiency and accuracy of the algorithms and codes developed thus far, they will be applied to a bluff-body stabilized, turbulent reacting-flame simulation.
+ \vskip-1.65em
  \begin{columns}[t]
   \begin{column}{0.6\textwidth}
    \begin{itemize}
-    \item Selected case is a relatively simple configuration, well characterized with experimental velocity and temperature measurements available\footnotemark[1]
+    \item OpenFOAM CFD code used to run large eddy simulation
+    \item Selected case is well characterized with experimental velocity and temperature measurements available\footnotemark[1]
     \item $U_{\text{in}} = $ \SI{16.6}{\meter/\s}, air at \SI{1}{\bar}, \SI{288}{\kelvin}
     \item \num{2.37e6} mesh nodes (see right), based on recommendations from previous studies\footnotemark[2]$^\text{,}$\footnotemark[3]
    \end{itemize}
   \end{column}
   \begin{column}{0.4\textwidth}
   \begin{figure}
-   \includegraphics[width=\textwidth]{mesh.png}
+   \includegraphics[width=1.2\textwidth]{mesh.png}
    \caption{\SI{2}{\milli\meter} hexagonal mesh, \SI{0.3}{\milli\meter} wall normal distance and clustering near walls; isotropic elsewhere.}
   \end{figure}
   \end{column}
@@ -373,7 +373,8 @@ A change of variables lead to a significant increase in Jacobian sparsity (with 
   \end{column}
  \end{columns}
  \footnotetext[1]{Both are built-in to OpenFOAM}
- Each time-step with the OpenFOAM solvers takes \textapprox\SI{3.5}{\hour}\footnote[2]{In large part due to poor chemistry load-balancing} on 92-cores (4-nodes) of UConn HPC.\note[item]{Intel\raisebox{1ex}{\scriptsize{\textregistered}} Xeon\raisebox{1ex}{\scriptsize{\textregistered}} E5-2690 v3 Processor}
+ Each time-step with the OpenFOAM solvers takes \textapprox\SI{3.5}{\hour} on 92-cores (4-nodes) of UConn HPC.\footnote[2]{In large part due to poor chemistry load-balancing}
+ \note[item]{Intel\raisebox{1ex}{\scriptsize{\textregistered}} Xeon\raisebox{1ex}{\scriptsize{\textregistered}} E5-2690 v3 Processor}
 \end{frame}
 
 \begin{frame}
@@ -382,13 +383,13 @@ A change of variables lead to a significant increase in Jacobian sparsity (with 
  \begin{itemize}
   \item Accuracy
   \item Effective speedup
-  \item Impact on chemical kinetic integration load-balancing (currently very poor in OpenFOAM!)
+  \item Impact on chemical kinetic integration load-balancing
  \end{itemize}
 \end{frame}
 
 \begin{frame}
  \frametitle{Thank you!}
- Questions?
+ \large Questions?
 \end{frame}
 
 
