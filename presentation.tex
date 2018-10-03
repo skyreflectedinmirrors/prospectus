@@ -33,9 +33,9 @@
 
 \newcommand{\textapprox}{\raisebox{0.5ex}{\texttildelow}}
 
-% \setbeameroption{hide notes} % only slides
+\setbeameroption{hide notes} % only slides
 % \setbeameroption{show only notes} % only notes
-\setbeameroption{show notes on second screen=right} % both
+% \setbeameroption{show notes on second screen=right} % both
 
 \graphicspath{{./Figures/}}
 
@@ -151,7 +151,7 @@ These next generation combustion devices are often controlled by chemical proces
 
 \begin{frame}
  \frametitle{Numerical stiffness}
- The large range of time-scales present in these chemical kinetic models---known as numerical stiffness---has traditionally been handled by use of implicit integration techniques, which require repeated evaluation and factorization of the chemical kinetic Jacobian.
+ The large range of time-scales present in these chemical kinetic models---known as numerical stiffness---has traditionally been handled by use of implicit integration techniques, which require repeated evaluation and factorization of the chemical kinetic jacobian.
  \begin{itemize}
   \item Naive implementations of these operations scale \textbf{quadratically} and \textbf{cubically} with the number of species in a model, respectively\footfullcite{Lu:2009gh}.
  \end{itemize}
@@ -167,7 +167,7 @@ These next generation combustion devices are often controlled by chemical proces
    \item lumping of species with similar thermochemical properties, and
    \item time-scale methods that reduce numerical stiffness
   \end{itemize}
-  Today we will focus on two such (complementary) techniques, analytical Jacobian evaluation and vectorized chemical kinetic integration.
+  Today we will focus on two such (complementary) techniques, analytical jacobian evaluation and vectorized chemical kinetic integration.
 \end{frame}
 
 \begin{background}
@@ -176,9 +176,9 @@ These next generation combustion devices are often controlled by chemical proces
 
 \begin{frame}
 \frametitle{Why use an analytical jacobian?}
-\textbf{Accuracy:} the exact chemical kinetic Jacobian evaluation is required for some computational diagnostic methods (e.g., CSP, or CEMA) in addition to non Newton--Krylov based implicit integration techniques\footfullcite{HANSEN2018257} (e.g., a linearly-implicit Rosenbrock methods).\parend/
+\textbf{Accuracy:} the exact chemical kinetic jacobian evaluation is required for some computational diagnostic methods (e.g., CSP, or CEMA) in addition to non Newton--Krylov based implicit integration techniques\footfullcite{HANSEN2018257} (e.g., a linearly-implicit Rosenbrock methods).\parend/
 \textbf{Efficiency:} analytical jacobian evaluation drops the cost from a quadratic dependence on the number of species (for a finite-difference approach) to a linear dependence on the number of reactions in a chemical model\footfullcite{Lu:2009gh}.\parend/
-\textbf{Sparsity:} a carefully chosen system of equations can greatly increase the sparsity of the Jacobian~\footfullcite{Schwer2002270}, allowing for fast, sparse linear-algebra and matrix factorization techniques to be used.
+\textbf{Sparsity:} a carefully chosen system of equations can greatly increase the sparsity of the jacobian~\footfullcite{Schwer2002270}, allowing for fast, sparse linear-algebra and matrix factorization techniques to be used.
 \end{frame}
 
 \begin{frame}
@@ -186,7 +186,7 @@ These next generation combustion devices are often controlled by chemical proces
  \begin{columns}[c]
   \begin{column}{0.6\textwidth}
   \begin{minipage}[c]{\columnwidth}
-    \texttt{pyJac}\footfullcite{Niemeyer:2016aa} is an open-source, validated, chemical kinetic source-rate and analytical Jacobian code-generation platform with thousands of downloads, and has been used in applications such as:
+    \texttt{pyJac}\footfullcite{Niemeyer:2016aa} is an open-source, validated, chemical kinetic source-rate and analytical jacobian code-generation platform with thousands of downloads, and has been used in applications such as:
     \begin{itemize}
      \item LES studies of duel-fuel spray combustion (right),
      \item validation\slash performance testing for a DNS code for heterogeneous processors~\footfullcite{HERNANDEZPEREZ201873},
@@ -220,8 +220,9 @@ These next generation combustion devices are often controlled by chemical proces
 
 \begin{frame}
 \frametitle{Increased jacobian sparsity}
-A change of variables lead to a significant increase in Jacobian sparsity (with options available to further increase sparsity at the expense of strict correctness):
+A change of variables lead to a significant increase in jacobian sparsity (with options available to further increase sparsity at the expense of strict correctness):
 \note[item]{the dense lines across the jacobian are due to the presence of the last species in reactions or as a third-body species}
+\note[item]{sparsity increased to \SIrange{26}{92}{\percent}}
 \begin{figure}
  \includegraphics[height=0.5\textheight]{ch4_sparsity_exact.png}
  \caption{Representation of sparsity of GRI-Mech 3.0 chemical kinetic model, a black square indicates a non-zero jacobian entry.}
@@ -283,7 +284,7 @@ A change of variables lead to a significant increase in Jacobian sparsity (with 
 
 \begin{frame}
  \frametitle{Stiff GPU chemistry integration algorithms}
- The developed open-source integration algorithms~\footfullcite{curtis2017investigation} were paired with an analytical Jacobian~\footfullcite{Niemeyer:2016aa}, and tested on chemical models of varying size, and levels of numerical stiffness, finding:%
+ The developed open-source integration algorithms~\footfullcite{curtis2017investigation} were paired with an analytical jacobian~\footfullcite{Niemeyer:2016aa}, and tested on chemical models of varying size, and levels of numerical stiffness, finding:%
  \vskip-1.5em
  \begin{columns}[t]
   \begin{column}{0.6\textwidth}
@@ -314,7 +315,7 @@ A change of variables lead to a significant increase in Jacobian sparsity (with 
  \begin{columns}[t]
   \begin{column}{0.6\textwidth}
    \begin{itemize}
-    \item OpenFOAM CFD code used to run large eddy simulation
+    \item OpenFOAM CFD code used to run LES
     \item Selected case is well characterized with experimental velocity and temperature measurements available\footnotemark[1]
     \item $U_{\text{in}} = $ \SI{16.6}{\meter/\s}, air at \SI{1}{\bar}, \SI{288}{\kelvin}
     \item \num{2.37e6} mesh nodes (see right), based on recommendations from previous studies\footnotemark[2]$^\text{,}$\footnotemark[3]
@@ -361,7 +362,7 @@ A change of variables lead to a significant increase in Jacobian sparsity (with 
     \begin{itemize}
       \item Stoichometric methane inflow; ignition kernel positioned behind the bluff body used during flame-development.
       \item Flame ignited using 2-step BFER methane model\note[item]{\fullcite{FRANZELLI2012621}}, switched to GRI-Mech 3.0 once developed.
-      \item Fourth-order linearly-implicit Rosenbrock ODE solver\note[item]{faster than either Seulex or Rodas43}, with semi-analytical Jacobian\footnotemark[1]
+      \item Fourth-order linearly-implicit Rosenbrock ODE solver\note[item]{faster than either Seulex or Rodas43}, with semi-analytical jacobian\footnotemark[1]
     \end{itemize}
   \end{column}
   \begin{column}{0.4\textwidth}
@@ -373,17 +374,17 @@ A change of variables lead to a significant increase in Jacobian sparsity (with 
   \end{column}
  \end{columns}
  \footnotetext[1]{Both are built-in to OpenFOAM}
- Each time-step with the OpenFOAM solvers takes \textapprox\SI{3.5}{\hour} on 92-cores (4-nodes) of UConn HPC.\footnote[2]{In large part due to poor chemistry load-balancing}
+ Each time-step with the OpenFOAM solvers takes \textapprox\SI{3.5}{\hour} on 92-cores (4-nodes) of UConn HPC.
  \note[item]{Intel\raisebox{1ex}{\scriptsize{\textregistered}} Xeon\raisebox{1ex}{\scriptsize{\textregistered}} E5-2690 v3 Processor}
 \end{frame}
 
 \begin{frame}
  \frametitle{Vectorized solvers}
- As a test of the developed algorithms, we will pair our CPU-vectorized analytical chemical kinetic source term and Jacobian code\footfullcite{CURTIS2018186}, with a previously developed vectorized linearly-implicit Rosenbrock method\footfullcite{STONE201818}, in order to determine:
+ As a test of the developed algorithms, we will pair our CPU-vectorized analytical chemical kinetic source term and jacobian code\footfullcite{CURTIS2018186}, with a previously developed vectorized linearly-implicit Rosenbrock method\footfullcite{STONE201818}, in order to determine:
  \begin{itemize}
   \item Accuracy
   \item Effective speedup
-  \item Impact on chemical kinetic integration load-balancing
+  \item Impact on chemical kinetic integration load-balancing\footnote{OpenFOAM's default chemistry solvers currently have very poor load-balancing, due to static decomposition of the domain.}
  \end{itemize}
 \end{frame}
 
